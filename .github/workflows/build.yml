@@ -1,0 +1,87 @@
+name: Build Apps
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: ffmpeg орнату
+        run: brew install ffmpeg
+
+      - name: Кітапханалар орнату
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: App жинау
+        run: |
+          pyinstaller --noconfirm \
+            --windowed \
+            --onedir \
+            --name "VideoTranscriber" \
+            --add-data "$(python -c 'import customtkinter, os; print(os.path.dirname(customtkinter.__file__))'):customtkinter" \
+            --hidden-import "whisper" \
+            --hidden-import "torch" \
+            main.py
+
+      - name: DMG жасау
+        run: |
+          brew install create-dmg
+          create-dmg \
+            --volname "VideoTranscriber" \
+            --window-size 600 400 \
+            --icon-size 128 \
+            --app-drop-link 400 200 \
+            "VideoTranscriber-mac.dmg" \
+            "dist/VideoTranscriber/"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: VideoTranscriber-mac.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: ffmpeg орнату
+        run: choco install ffmpeg -y
+
+      - name: Кітапханалар орнату
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: App жинау
+        run: |
+          $ctk = python -c "import customtkinter, os; print(os.path.dirname(customtkinter.__file__))"
+          pyinstaller --noconfirm `
+            --windowed `
+            --onedir `
+            --name "VideoTranscriber" `
+            --add-data "$ctk;customtkinter" `
+            --hidden-import "whisper" `
+            --hidden-import "torch" `
+            main.py
+
+      - name: ZIP жасау
+        run: Compress-Archive -Path dist\VideoTranscriber\* -DestinationPath VideoTranscriber-windows.zip
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: VideoTranscriber-windows.zip
