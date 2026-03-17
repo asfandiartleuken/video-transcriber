@@ -1,178 +1,49 @@
+# 🎙 Video Transcriber
 
-
-```markdown
-# 🎙 Видео Транскриптор
-
-Видеодан сөйлеуді автоматты түрде текстке айналдыратын desktop қолданба.  
+Видеодан сөйлеуді автоматты түрде текстке айналдыратын desktop қолданба.
 **OpenAI Whisper** + **CustomTkinter** негізінде жасалған.
+
+![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)
 
 ---
 
 ## ✨ Мүмкіндіктер
 
-- 🎥 MP4, MKV, AVI, MOV, WEBM форматтарын қолдайды
-- 🔗 Тікелей URL сілтемесінен транскрипциялау
-- 🤖 OpenAI Whisper арқылы дәл транскрипция
-- 🕐 Timestamps (уақыт белгілері) режимі
-- 🎞 SRT субтитр экспорты
-- 📋 Clipboard-қа бір кликпен көшіру
-- 💾 Нәтижені `.txt` файлға сақтау
-- ⏹ Транскрипцияны тоқтату батырмасы
-- 📊 Сөз саны статистикасы
-- 🌙 Заманауи Dark theme интерфейс
-- ⚙️ Параметрлерді автоматты сақтау
+| Мүмкіндік | Сипаттама |
+|-----------|-----------|
+| 🎥 Локал файл | MP4, MKV, AVI, MOV, WEBM форматтары |
+| 🔗 URL қолдау | Тікелей MP4 сілтемесінен транскрипция |
+| 🤖 Whisper модельдері | tiny · base · small · medium |
+| 🕐 Timestamps | Уақыт белгілері бар мәтін |
+| 🎞 SRT экспорт | Субтитр файлы жасау |
+| 📄 TXT экспорт | Қарапайым мәтін файлы |
+| 📋 Clipboard | Бір кликпен мәтінді көшіру |
+| ⏹ Тоқтату | Транскрипцияны Cancel ету |
+| 📊 Статистика | Сөз / таңба саны |
+| 💾 Параметрлер | Автоматты сақталады |
+| 🌙 Dark theme | Заманауи CustomTkinter интерфейс |
 
 ---
 
-## 📋 Жүйе талаптары
+## 📥 Жүктеп алу (орнату керек емес)
 
-- Python 3.9+
-- ffmpeg
-- Интернет (бірінші рет модель жүктеу үшін)
+Репозиторийдің **[Releases](https://github.com/asfandiartleuken/video-transcriber/releases)** бетінен жүктеп аласың:
 
----
+| Жүйе | Файл |
+|------|------|
+| 🍎 macOS | `VideoTranscriber-mac.dmg` |
+| 🪟 Windows | `VideoTranscriber-windows.zip` |
 
-## 🐧 Arch Linux
+- **macOS**: `.dmg`-ды ашып, `VideoTranscriber.app`-ты `Applications`-қа сүйреп апар
+- **Windows**: `.zip`-ты ашып, `VideoTranscriber.exe`-ді іске қос
 
-### 1. Жүйелік пакеттерді орнату
-```bash
-sudo pacman -S python ffmpeg tk git
-```
-
-### 2. Репозиторийді клондау
-```bash
-git clone https://github.com/asfandiartleuken/video-transcriber.git
-cd video-transcriber
-```
-
-### 3. Виртуал орта жасау
-```bash
-python -m venv venv
-
-# Fish shell үшін:
-source venv/bin/activate.fish
-
-# Bash үшін:
-source venv/bin/activate
-```
-
-### 4. Кітапханаларды орнату
-```bash
-pip install -r requirements.txt
-```
-
-### 5. Іске қосу
-```bash
-python main.py
-```
+> Билдтер GitHub Actions арқылы автоматты жасалады
 
 ---
 
-## 🐧 Ubuntu / Debian
-
-### 1. Жүйелік пакеттерді орнату
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv ffmpeg python3-tk git
-```
-
-### 2. Репозиторийді клондау
-```bash
-git clone https://github.com/asfandiartleuken/video-transcriber.git
-cd video-transcriber
-```
-
-### 3. Виртуал орта жасау
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 4. Кітапханаларды орнату
-```bash
-pip install -r requirements.txt
-```
-
-### 5. Іске қосу
-```bash
-python main.py
-```
-
----
-
-## 🍎 macOS
-
-### 1. Homebrew орнату (жоқ болса)
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-### 2. ffmpeg орнату
-```bash
-brew install ffmpeg
-```
-
-### 3. Репозиторийді клондау
-```bash
-git clone https://github.com/asfandiartleuken/video-transcriber.git
-cd video-transcriber
-```
-
-### 4. Виртуал орта жасау
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 5. Кітапханаларды орнату
-```bash
-pip install -r requirements.txt
-```
-
-### 6. Іске қосу
-```bash
-python main.py
-```
-
----
-
-## 🪟 Windows
-
-### 1. Python орнату
-[python.org](https://www.python.org/downloads/) сайтынан жүктеп алыңыз.  
-⚠️ Орнату кезінде **"Add Python to PATH"** белгісін қойыңыз.
-
-### 2. ffmpeg орнату
-```cmd
-winget install ffmpeg
-```
-Немесе [ffmpeg.org](https://ffmpeg.org/download.html) сайтынан жүктеп, `C:\ffmpeg\bin` жолын PATH-қа қосыңыз.
-
-### 3. Репозиторийді клондау
-```cmd
-git clone https://github.com/asfandiartleuken/video-transcriber.git
-cd video-transcriber
-```
-
-### 4. Виртуал орта жасау
-```cmd
-python -m venv venv
-venv\Scripts\activate
-```
-
-### 5. Кітапханаларды орнату
-```cmd
-pip install -r requirements.txt
-```
-
-### 6. Іске қосу
-```cmd
-python main.py
-```
-
----
-
-## ⚙️ Модель өлшемдері
+## ⚙️ Whisper модельдері
 
 | Модель | Жылдамдық | Дәлдік | Диск |
 |--------|-----------|--------|------|
@@ -183,12 +54,15 @@ python main.py
 
 ---
 
-## 🛠️ Технологиялар
+## 🛠 Технологиялар
 
-- [OpenAI Whisper](https://github.com/openai/whisper) — сөйлеуді тануу
-- [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) — заманауи GUI
+- [OpenAI Whisper](https://github.com/openai/whisper) — сөйлеуді тану
+- [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) — GUI
 - [ffmpeg](https://ffmpeg.org/) — аудио/видео өңдеу
 - Python 3.9+
 
 ---
 
+## 📄 Лицензия
+
+MIT License © 2026 [asfandiartleuken](https://github.com/asfandiartleuken)
