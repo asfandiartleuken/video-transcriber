@@ -192,15 +192,3 @@ python main.py
 
 ---
 
-## 📄 Лицензия
-
-MIT License
-```
-
-## GitHub-қа жүктеу
-
-```fish
-git add README.md
-git commit -m "docs: add installation guide for Arch, Ubuntu, macOS, Windows"
-git push
-```
