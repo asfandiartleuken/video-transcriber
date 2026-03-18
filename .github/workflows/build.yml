@@ -32,6 +32,7 @@ jobs:
             --onedir \
             --name "VideoTranscriber" \
             --add-data "$(python -c 'import customtkinter, os; print(os.path.dirname(customtkinter.__file__))'):customtkinter" \
+            --collect-data "whisper" \
             --hidden-import "whisper" \
             --hidden-import "torch" \
             main.py
@@ -85,6 +86,7 @@ jobs:
             --onedir `
             --name "VideoTranscriber" `
             --add-data "$ctk;customtkinter" `
+            --collect-data "whisper" `
             --hidden-import "whisper" `
             --hidden-import "torch" `
             main.py
