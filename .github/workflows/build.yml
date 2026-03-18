@@ -80,9 +80,14 @@ jobs:
             --hidden-import "torch" `
             main.py
 
-      - name: ZIP жасау
-        run: Compress-Archive -Path dist\VideoTranscriber\* -DestinationPath VideoTranscriber-windows.zip
+      - name: Inno Setup орнату
+        run: choco install innosetup -y
+
+      - name: Windows Installer жасау (.exe)
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          iscc /DMyAppVersion=$version .github\installer\VideoTranscriber.iss
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: VideoTranscriber-windows.zip
+          files: VideoTranscriber-Setup.exe

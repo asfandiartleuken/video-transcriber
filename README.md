@@ -34,10 +34,10 @@
 | Жүйе | Файл |
 |------|------|
 | 🍎 macOS | `VideoTranscriber-mac.dmg` |
-| 🪟 Windows | `VideoTranscriber-windows.zip` |
+| 🪟 Windows | `VideoTranscriber-Setup.exe` |
 
 - **macOS**: `.dmg`-ды ашып, `VideoTranscriber.app`-ты `Applications`-қа сүйреп апар
-- **Windows**: `.zip`-ты ашып, `VideoTranscriber.exe`-ді іске қос
+- **Windows**: `VideoTranscriber-Setup.exe`-ді ашып, орнатуды аяқта
 
 > Билдтер GitHub Actions арқылы автоматты жасалады
 
