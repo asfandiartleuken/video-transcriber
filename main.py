@@ -7,6 +7,7 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox
 
 import json
+import io
 import logging
 import multiprocessing as mp
 import os
@@ -15,6 +16,7 @@ import queue
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -45,6 +47,26 @@ ALLOWED_CONTENT_PREFIXES = ("video/",)
 ALLOWED_CONTENT_TYPES = {"application/octet-stream"}
 
 MP_CTX = mp.get_context("spawn")
+
+
+class _NullTextIO(io.TextIOBase):
+    def write(self, _s: str) -> int:  # noqa: D401
+        return 0
+
+    def flush(self) -> None:  # noqa: D401
+        return None
+
+
+def ensure_stdio_streams() -> None:
+    # On Windows GUI builds (PyInstaller --windowed), stdout/stderr can be None.
+    # Some dependencies (e.g., whisper/tqdm) call .write(), so provide safe streams.
+    if sys.stdout is None:
+        sys.stdout = _NullTextIO()
+    if sys.stderr is None:
+        sys.stderr = _NullTextIO()
+
+
+ensure_stdio_streams()
 
 
 def get_config_path() -> Path:
@@ -78,6 +100,30 @@ class DownloadError(RuntimeError):
     pass
 
 
+def get_app_root() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
+def get_tool_binary(tool_name: str) -> str | None:
+    app_root = get_app_root()
+    candidates = [tool_name]
+    if os.name == "nt" and not tool_name.lower().endswith(".exe"):
+        candidates.append(f"{tool_name}.exe")
+
+    for candidate in candidates:
+        bundled = app_root / "tools" / candidate
+        if bundled.is_file():
+            return str(bundled)
+
+    for candidate in candidates:
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+    return None
+
+
 def is_url(path: str) -> bool:
     return path.startswith("http://") or path.startswith("https://")
 
@@ -91,7 +137,7 @@ def is_youtube_url(url: str) -> bool:
 
 
 def ensure_dependencies() -> None:
-    missing = [tool for tool in ("ffmpeg", "ffprobe") if shutil.which(tool) is None]
+    missing = [tool for tool in ("ffmpeg", "ffprobe") if get_tool_binary(tool) is None]
     if not missing:
         return
     tools = ", ".join(missing)
@@ -106,9 +152,12 @@ def ensure_dependencies() -> None:
 
 def get_video_duration(video_path: str) -> str:
     try:
+        ffprobe_bin = get_tool_binary("ffprobe")
+        if ffprobe_bin is None:
+            return "?"
         result = subprocess.run(
             [
-                "ffprobe",
+                ffprobe_bin,
                 "-v",
                 "error",
                 "-show_entries",
@@ -131,8 +180,11 @@ def get_video_duration(video_path: str) -> str:
 
 
 def extract_audio(video_path: str, audio_path: str, cancel_event: threading.Event) -> None:
+    ffmpeg_bin = get_tool_binary("ffmpeg")
+    if ffmpeg_bin is None:
+        raise DependencyError("`ffmpeg` табылмады.")
     cmd = [
-        "ffmpeg",
+        ffmpeg_bin,
         "-hide_banner",
         "-loglevel",
         "error",
@@ -166,6 +218,9 @@ def extract_audio(video_path: str, audio_path: str, cancel_event: threading.Even
 
 
 def validate_media_file(video_path: str) -> None:
+    ffprobe_bin = get_tool_binary("ffprobe")
+    if ffprobe_bin is None:
+        raise DependencyError("`ffprobe` табылмады.")
     if not os.path.isfile(video_path):
         raise RuntimeError("Көрсетілген файл табылмады.")
 
@@ -174,7 +229,7 @@ def validate_media_file(video_path: str) -> None:
 
     probe = subprocess.run(
         [
-            "ffprobe",
+            ffprobe_bin,
             "-v",
             "error",
             "-show_entries",
@@ -267,7 +322,7 @@ def download_youtube_video(
     cancel_event: threading.Event,
     progress_callback=None,
 ) -> None:
-    yt_dlp_bin = shutil.which("yt-dlp")
+    yt_dlp_bin = get_tool_binary("yt-dlp")
     if yt_dlp_bin is None:
         raise DependencyError(
             "YouTube сілтемесі үшін `yt-dlp` керек.\n\n"
@@ -393,6 +448,7 @@ def _transcribe_audio_process(
         options = {}
         if language:
             options["language"] = language
+        options["verbose"] = False
         result = model.transcribe(audio_path, **options)
         result_queue.put(("ok", result))
     except Exception as exc:  # noqa: BLE001

@@ -40,6 +40,7 @@
 - **Windows**: `VideoTranscriber-Setup.exe`-ді ашып, орнатуды аяқта
 
 > Билдтер GitHub Actions арқылы автоматты жасалады
+> macOS/Windows релиздерінің ішінде `ffmpeg`, `ffprobe`, `yt-dlp` бірге келеді
 
 ---
 

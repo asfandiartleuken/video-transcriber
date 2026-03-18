@@ -18,7 +18,7 @@ jobs:
           python-version: "3.11"
 
       - name: ffmpeg орнату
-        run: brew install ffmpeg
+        run: brew install ffmpeg yt-dlp
 
       - name: Кітапханалар орнату
         run: |
@@ -35,6 +35,13 @@ jobs:
             --hidden-import "whisper" \
             --hidden-import "torch" \
             main.py
+
+      - name: CLI tools-ты app ішіне қосу
+        run: |
+          mkdir -p dist/VideoTranscriber/tools
+          cp -L "$(command -v ffmpeg)" dist/VideoTranscriber/tools/ffmpeg
+          cp -L "$(command -v ffprobe)" dist/VideoTranscriber/tools/ffprobe
+          cp -L "$(command -v yt-dlp)" dist/VideoTranscriber/tools/yt-dlp
 
       - name: DMG жасау
         run: |
@@ -61,7 +68,9 @@ jobs:
           python-version: "3.11"
 
       - name: ffmpeg орнату
-        run: choco install ffmpeg -y
+        run: |
+          choco install ffmpeg -y
+          choco install yt-dlp -y
 
       - name: Кітапханалар орнату
         run: |
@@ -79,6 +88,24 @@ jobs:
             --hidden-import "whisper" `
             --hidden-import "torch" `
             main.py
+
+      - name: CLI tools-ты app ішіне қосу
+        shell: powershell
+        run: |
+          $toolsDir = "dist\VideoTranscriber\tools"
+          New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
+
+          $ffmpegExe = Get-ChildItem "C:\ProgramData\chocolatey\lib\ffmpeg*\tools" -Recurse -Filter ffmpeg.exe | Select-Object -First 1 -ExpandProperty FullName
+          $ffprobeExe = Get-ChildItem "C:\ProgramData\chocolatey\lib\ffmpeg*\tools" -Recurse -Filter ffprobe.exe | Select-Object -First 1 -ExpandProperty FullName
+          $ytdlpExe = Get-ChildItem "C:\ProgramData\chocolatey\lib\yt-dlp*\tools" -Recurse -Filter yt-dlp.exe | Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $ffmpegExe -or -not $ffprobeExe -or -not $ytdlpExe) {
+            throw "Bundled CLI tools табылмады (ffmpeg/ffprobe/yt-dlp)."
+          }
+
+          Copy-Item $ffmpegExe "$toolsDir\ffmpeg.exe" -Force
+          Copy-Item $ffprobeExe "$toolsDir\ffprobe.exe" -Force
+          Copy-Item $ytdlpExe "$toolsDir\yt-dlp.exe" -Force
 
       - name: Inno Setup орнату
         run: choco install innosetup -y
