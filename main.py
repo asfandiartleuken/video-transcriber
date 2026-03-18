@@ -124,6 +124,21 @@ def get_tool_binary(tool_name: str) -> str | None:
     return None
 
 
+def add_bundled_tools_to_path() -> None:
+    tools_dir = get_app_root() / "tools"
+    if not tools_dir.is_dir():
+        return
+
+    current_path = os.environ.get("PATH", "")
+    parts = current_path.split(os.pathsep) if current_path else []
+    tools_str = str(tools_dir)
+    if tools_str not in parts:
+        os.environ["PATH"] = tools_str + (os.pathsep + current_path if current_path else "")
+
+
+add_bundled_tools_to_path()
+
+
 def is_url(path: str) -> bool:
     return path.startswith("http://") or path.startswith("https://")
 
