@@ -455,6 +455,7 @@ def _transcribe_audio_process(
     model_name: str,
     language: str | None,
     result_queue,
+    result_json_path: str,
 ) -> None:
     try:
         import whisper
@@ -465,7 +466,9 @@ def _transcribe_audio_process(
             options["language"] = language
         options["verbose"] = False
         result = model.transcribe(audio_path, **options)
-        result_queue.put(("ok", result))
+        with open(result_json_path, "w", encoding="utf-8") as file_handle:
+            json.dump(result, file_handle, ensure_ascii=False)
+        result_queue.put(("ok", "ready"))
     except Exception as exc:  # noqa: BLE001
         result_queue.put(("error", str(exc)))
 
@@ -487,31 +490,49 @@ class TranscriptionService:
     ) -> dict[str, Any]:
         status_callback(0.45, f"'{model_name}' моделі жүктелуде…")
         result_queue = MP_CTX.Queue()
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as temp_json:
+            result_json_path = temp_json.name
         process = MP_CTX.Process(
             target=_transcribe_audio_process,
-            args=(audio_path, model_name, language, result_queue),
+            args=(audio_path, model_name, language, result_queue, result_json_path),
             daemon=True,
         )
         process.start()
 
         status_callback(0.70, "Транскрипциялануда… Күте тұрыңыз")
-        while process.is_alive():
-            if self._cancel_event.is_set():
-                process.terminate()
-                process.join(timeout=2)
-                raise CancelledError("Операция тоқтатылды.")
-            process.join(timeout=0.2)
-
-        if self._cancel_event.is_set():
-            raise CancelledError("Операция тоқтатылды.")
-
         try:
-            status, payload = result_queue.get(timeout=1)
-        except queue.Empty as exc:
-            raise RuntimeError("Whisper процесі нәтиже бермеді.") from exc
-        if status == "error":
-            raise RuntimeError(payload)
-        return payload
+            while process.is_alive():
+                if self._cancel_event.is_set():
+                    process.terminate()
+                    process.join(timeout=2)
+                    raise CancelledError("Операция тоқтатылды.")
+                try:
+                    status, payload = result_queue.get_nowait()
+                    break
+                except queue.Empty:
+                    process.join(timeout=0.2)
+            else:
+                try:
+                    status, payload = result_queue.get(timeout=2)
+                except queue.Empty as exc:
+                    raise RuntimeError("Whisper процесі нәтиже бермеді.") from exc
+
+            if self._cancel_event.is_set():
+                raise CancelledError("Операция тоқтатылды.")
+            if status == "error":
+                raise RuntimeError(payload)
+
+            try:
+                with open(result_json_path, "r", encoding="utf-8") as file_handle:
+                    return json.load(file_handle)
+            except (OSError, json.JSONDecodeError) as exc:
+                raise RuntimeError("Whisper нәтижесін оқу сәтсіз аяқталды.") from exc
+        finally:
+            if os.path.exists(result_json_path):
+                try:
+                    os.unlink(result_json_path)
+                except OSError:
+                    logger.warning("Failed to remove temp file: %s", result_json_path)
 
     def transcribe(
         self,
