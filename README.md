@@ -20,6 +20,8 @@
 | 🎞 SRT экспорт | Субтитр файлы жасау |
 | 📄 TXT экспорт | Қарапайым мәтін файлы |
 | 📋 Clipboard | Бір кликпен мәтінді көшіру |
+| 🕐 Көрініс ауыстыру | Қарапайым мәтін / timestamps арасында ауысу |
+| ♻ Тазалау | Нәтижені бір батырмамен тазарту |
 | ⏹ Тоқтату | Транскрипцияны Cancel ету |
 | 📊 Статистика | Сөз / таңба саны |
 | 💾 Параметрлер | Автоматты сақталады |
@@ -51,6 +53,12 @@ pip install -r requirements.txt
 python main.py
 ```
 
+Тесттер:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
 ---
 
 ## ⚙️ Whisper модельдері
@@ -70,6 +78,26 @@ python main.py
 - [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) — GUI
 - [ffmpeg](https://ffmpeg.org/) — аудио/видео өңдеу
 - Python 3.9+
+
+---
+
+## 🧱 Архитектура
+
+- `main.py` — entrypoint, logging/runtime setup
+- `ui_app.py` — CustomTkinter интерфейсі
+- `services/transcription_service.py` — транскрипция orchestration
+- `services/download_service.py` — URL/YouTube жүктеу
+- `media_tools.py` — ffmpeg/ffprobe, media validation
+- `transcriber_core.py` — core utility функциялары
+- `app_config.py` — settings load/save
+- `tests/` — unit тесттер
+
+---
+
+## 🪵 Логтар
+
+- Лог файлы автоматты түрде сақталады: `~/.config/video-transcriber/logs/app.log` (Linux жүйесінде)
+- Windows/macOS-та осыған эквивалент app config директориясы қолданылады
 
 ---
 

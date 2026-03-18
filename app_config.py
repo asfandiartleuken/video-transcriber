@@ -15,6 +15,10 @@ WHISPER_MODELS = ["tiny", "base", "small", "medium"]
 DEFAULT_LANGUAGE = "en"
 
 
+def default_settings() -> dict[str, Any]:
+    return {"model": "base", "language": DEFAULT_LANGUAGE, "timestamps": False, "last_dir": str(Path.home())}
+
+
 def get_config_path() -> Path:
     system = platform.system()
     home = Path.home()
@@ -39,15 +43,18 @@ def load_settings() -> dict[str, Any]:
         with open(CONFIG_PATH, "r", encoding="utf-8") as file_handle:
             data = json.load(file_handle)
     except FileNotFoundError:
-        return {"model": "base", "language": DEFAULT_LANGUAGE, "timestamps": False}
+        return default_settings()
     except (json.JSONDecodeError, OSError) as exc:
         logger.warning("Settings read error: %s", exc)
-        return {"model": "base", "language": DEFAULT_LANGUAGE, "timestamps": False}
+        return default_settings()
 
     if not isinstance(data, dict):
         logger.warning("Settings file has invalid format, expected dict.")
-        return {"model": "base", "language": DEFAULT_LANGUAGE, "timestamps": False}
-    return data
+        return default_settings()
+
+    merged = default_settings()
+    merged.update(data)
+    return merged
 
 
 def save_settings(data: dict[str, Any]) -> None:

@@ -3,14 +3,14 @@ Video Transcriber — CustomTkinter + OpenAI Whisper
 Барлық функциялары бар толық нұсқа (URL қолдауымен).
 """
 
-import logging
 import multiprocessing as mp
 
+from logging_utils import configure_logging
 from media_tools import add_bundled_tools_to_path
 from runtime_utils import ensure_stdio_streams
 from ui_app import VideoTranscriberApp
 
-logging.basicConfig(level=logging.INFO)
+configure_logging()
 
 ensure_stdio_streams()
 add_bundled_tools_to_path()

@@ -1,6 +1,7 @@
 import os
 import queue
 import threading
+import logging
 from tkinter import filedialog, messagebox
 from typing import Any
 
@@ -14,6 +15,7 @@ from transcriber_core import is_url
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
+logger = logging.getLogger(__name__)
 
 
 class VideoTranscriberApp(ctk.CTk):
@@ -27,6 +29,7 @@ class VideoTranscriberApp(ctk.CTk):
         self._transcript_text = ""
         self._srt_text = ""
         self._segments: list[dict[str, Any]] = []
+        self._display_timestamps = False
         self._task_queue: queue.Queue = queue.Queue()
         self._cancel_event = threading.Event()
         self._settings = load_settings()
@@ -209,16 +212,49 @@ class VideoTranscriberApp(ctk.CTk):
         )
         self._save_srt_btn.grid(row=0, column=3, padx=4)
 
+        self._toggle_view_btn = ctk.CTkButton(
+            btn_bar,
+            text="🕐  TS көру",
+            height=36,
+            width=130,
+            state="disabled",
+            fg_color="#6b5f1a",
+            hover_color="#4a4112",
+            command=self._toggle_timestamp_view,
+        )
+        self._toggle_view_btn.grid(row=0, column=4, padx=4)
+
+        self._reset_btn = ctk.CTkButton(
+            btn_bar,
+            text="♻  Тазалау",
+            height=36,
+            width=120,
+            fg_color="#3f3f3f",
+            hover_color="#2a2a2a",
+            command=self._reset_output,
+        )
+        self._reset_btn.grid(row=0, column=5, padx=4)
+
+
     def _select_file(self):
-        path = filedialog.askopenfilename(title="Видео файл таңдаңыз", filetypes=VIDEO_EXTENSIONS)
+        path = filedialog.askopenfilename(
+            title="Видео файл таңдаңыз",
+            initialdir=self._settings.get("last_dir", os.path.expanduser("~")),
+            filetypes=VIDEO_EXTENSIONS,
+        )
         if not path:
             return
-        self._video_path = path
-        self._url_entry.delete(0, "end")
-        name = os.path.basename(path)
-        size_mb = os.path.getsize(path) / (1024 * 1024)
-        duration = get_video_duration(path)
-        self._file_label.configure(text=f"✅  {name}  ({size_mb:.1f} MB · {duration})", text_color="white")
+        try:
+            self._video_path = path
+            self._url_entry.delete(0, "end")
+            name = os.path.basename(path)
+            size_mb = os.path.getsize(path) / (1024 * 1024)
+            duration = get_video_duration(path)
+            self._file_label.configure(text=f"✅  {name}  ({size_mb:.1f} MB · {duration})", text_color="white")
+            self._save_current_settings(last_dir=os.path.dirname(path))
+        except OSError as exc:
+            logger.exception("Failed to read selected file metadata")
+            messagebox.showerror("Қате", f"Файл туралы ақпаратты оқу сәтсіз аяқталды: {exc}")
 
     def _use_url(self):
         url = self._url_entry.get().strip()
@@ -240,13 +276,7 @@ class VideoTranscriberApp(ctk.CTk):
             messagebox.showerror("Қате", "Таңдалған файл табылмады.")
             return
 
-        save_settings(
-            {
-                "model": self._model_var.get(),
-                "language": self._lang_entry.get().strip(),
-                "timestamps": self._ts_var.get(),
-            }
-        )
+        self._save_current_settings()
 
         self._job_counter += 1
         self._active_job_id = self._job_counter
@@ -256,6 +286,7 @@ class VideoTranscriberApp(ctk.CTk):
         self._cancel_btn.configure(state="normal")
         self._save_txt_btn.configure(state="disabled")
         self._save_srt_btn.configure(state="disabled")
+        self._toggle_view_btn.configure(state="disabled")
         self._copy_btn.configure(state="disabled")
         self._text_box.delete("1.0", "end")
         self._stats_label.configure(text="")
@@ -322,10 +353,9 @@ class VideoTranscriberApp(ctk.CTk):
         self._segments = data["segments"]
         self._transcript_text = data["plain"]
         self._srt_text = data["srt"]
+        self._display_timestamps = bool(self._ts_var.get())
 
-        display = data["ts_text"] if self._ts_var.get() else data["plain"]
-        self._text_box.delete("1.0", "end")
-        self._text_box.insert("1.0", display or "(Мәтін анықталмады)")
+        self._render_output()
 
         words = len(self._transcript_text.split())
         chars = len(self._transcript_text)
@@ -338,6 +368,7 @@ class VideoTranscriberApp(ctk.CTk):
         if self._transcript_text:
             self._save_txt_btn.configure(state="normal")
             self._save_srt_btn.configure(state="normal")
+            self._toggle_view_btn.configure(state="normal")
             self._copy_btn.configure(state="normal")
 
     def _on_cancelled(self):
@@ -383,6 +414,7 @@ class VideoTranscriberApp(ctk.CTk):
             title=title,
             defaultextension=default_ext,
             initialfile=default_name,
+            initialdir=self._settings.get("last_dir", os.path.expanduser("~")),
             filetypes=filetypes,
         )
         if not path:
@@ -390,9 +422,54 @@ class VideoTranscriberApp(ctk.CTk):
         try:
             with open(path, "w", encoding="utf-8") as file_handle:
                 file_handle.write(content)
+            self._save_current_settings(last_dir=os.path.dirname(path))
             messagebox.showinfo("Сақталды", f"Файл сақталды:\n{path}")
         except OSError as exc:
+            logger.exception("Save failed for %s", path)
             messagebox.showerror("Сақтау қатесі", str(exc))
+
+    def _render_output(self):
+        display = self._segments_to_timestamped_text() if self._display_timestamps else self._transcript_text
+        self._text_box.delete("1.0", "end")
+        self._text_box.insert("1.0", display or "(Мәтін анықталмады)")
+
+    def _segments_to_timestamped_text(self) -> str:
+        lines = []
+        for segment in self._segments:
+            start = float(segment.get("start", 0.0))
+            h, rem = divmod(int(start), 3600)
+            m, s = divmod(rem, 60)
+            text = str(segment.get("text", "")).strip()
+            lines.append(f"[{h:02d}:{m:02d}:{s:02d}]  {text}")
+        return "\n".join(lines)
+
+    def _toggle_timestamp_view(self):
+        if not self._transcript_text:
+            return
+        self._display_timestamps = not self._display_timestamps
+        self._toggle_view_btn.configure(text="📝  Мәтін көру" if self._display_timestamps else "🕐  TS көру")
+        self._render_output()
+
+    def _reset_output(self):
+        self._transcript_text = ""
+        self._srt_text = ""
+        self._segments = []
+        self._display_timestamps = False
+        self._text_box.delete("1.0", "end")
+        self._stats_label.configure(text="")
+        self._set_progress(0.0, "Дайын")
+        self._save_txt_btn.configure(state="disabled")
+        self._save_srt_btn.configure(state="disabled")
+        self._copy_btn.configure(state="disabled")
+        self._toggle_view_btn.configure(state="disabled", text="🕐  TS көру")
+
+    def _save_current_settings(self, last_dir: str | None = None):
+        if last_dir:
+            self._settings["last_dir"] = last_dir
+        self._settings["model"] = self._model_var.get()
+        self._settings["language"] = self._lang_entry.get().strip()
+        self._settings["timestamps"] = self._ts_var.get()
+        save_settings(self._settings)
 
     def _set_progress(self, value: float, status: str):
         self._progress.set(value)
