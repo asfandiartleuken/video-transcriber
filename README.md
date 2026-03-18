@@ -27,7 +27,22 @@
 
 ---
 
-## 🚀 Іске қосу
+## 🚀 Іске қосу (source)
+
+Бұл жоба қазір тек source-тан іске қосылады (`Releases`/installer жоқ).
+
+Алдымен жүйелік тәуелділіктерді орнатыңыз:
+
+- `ffmpeg` (міндетті)
+- `yt-dlp` (тек YouTube URL үшін)
+
+Мысал:
+
+- Arch Linux: `sudo pacman -S ffmpeg yt-dlp`
+- macOS: `brew install ffmpeg yt-dlp`
+- Windows: `winget install ffmpeg yt-dlp`
+
+Содан кейін:
 
 ```bash
 python -m venv venv
