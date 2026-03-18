@@ -27,20 +27,14 @@
 
 ---
 
-## 📥 Жүктеп алу (орнату керек емес)
+## 🚀 Іске қосу
 
-Репозиторийдің **[Releases](https://github.com/asfandiartleuken/video-transcriber/releases)** бетінен жүктеп аласың:
-
-| Жүйе | Файл |
-|------|------|
-| 🍎 macOS | `VideoTranscriber-mac.dmg` |
-| 🪟 Windows | `VideoTranscriber-Setup.exe` |
-
-- **macOS**: `.dmg`-ды ашып, `VideoTranscriber.app`-ты `Applications`-қа сүйреп апар
-- **Windows**: `VideoTranscriber-Setup.exe`-ді ашып, орнатуды аяқта
-
-> Билдтер GitHub Actions арқылы автоматты жасалады
-> macOS/Windows релиздерінің ішінде `ffmpeg`, `ffprobe`, `yt-dlp` бірге келеді
+```bash
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
 
 ---
 
