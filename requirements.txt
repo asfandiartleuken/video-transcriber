@@ -1,3 +1,4 @@
 openai-whisper==20250625
 customtkinter==5.2.2
 yt-dlp==2026.3.17
+certifi>=2024.8.30

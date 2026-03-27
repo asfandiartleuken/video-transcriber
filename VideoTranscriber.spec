@@ -9,12 +9,14 @@ project_root = Path(SPECPATH).resolve().parent
 datas = []
 datas += collect_data_files("customtkinter")
 datas += collect_data_files("whisper")
+datas += collect_data_files("certifi")
 
 tools_dir = project_root / "tools"
 if tools_dir.is_dir():
     datas.append((str(tools_dir), "tools"))
 
 hiddenimports = collect_submodules("whisper")
+hiddenimports += ["certifi"]
 
 a = Analysis(
     ["main.py"],

@@ -1,4 +1,5 @@
 import re
+import ssl
 import subprocess
 import threading
 import time
@@ -15,6 +16,31 @@ DOWNLOAD_CHUNK_SIZE = 1024 * 64
 MAX_DOWNLOAD_SIZE_MB = 1024
 ALLOWED_CONTENT_PREFIXES = ("video/",)
 ALLOWED_CONTENT_TYPES = {"application/octet-stream"}
+
+
+def _build_ssl_context() -> ssl.SSLContext:
+    """
+    Build SSL context with up-to-date CA bundle when certifi is available.
+    Fallback to system certificates otherwise.
+    """
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:  # noqa: BLE001
+        return ssl.create_default_context()
+
+
+def _format_download_error(error: Exception) -> str:
+    if isinstance(error, urllib.error.URLError):
+        reason = getattr(error, "reason", None)
+        if isinstance(reason, ssl.SSLCertVerificationError):
+            return (
+                "SSL сертификатын тексеру сәтсіз аяқталды. "
+                "Жүйелік сертификаттар ескірген болуы мүмкін. "
+                "`pip install -r requirements.txt --upgrade` орындап көріңіз."
+            )
+    return str(error)
 
 
 def validate_response_headers(headers: Any) -> int:
@@ -43,12 +69,13 @@ def download_video(
         url,
         headers={"User-Agent": "Mozilla/5.0 (VideoTranscriber/1.0)"},
     )
+    ssl_context = _build_ssl_context()
     max_bytes = MAX_DOWNLOAD_SIZE_MB * 1024 * 1024
     last_error: Exception | None = None
 
     for attempt in range(DOWNLOAD_RETRIES + 1):
         try:
-            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_SECONDS) as response:
+            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=ssl_context) as response:
                 total_size = validate_response_headers(response.headers)
                 downloaded = 0
 
@@ -76,7 +103,7 @@ def download_video(
                 break
             time.sleep(1.0 + attempt * 0.8)
 
-    raise DownloadError(f"Видеоны жүктеу сәтсіз аяқталды: {last_error}")
+    raise DownloadError(f"Видеоны жүктеу сәтсіз аяқталды: {_format_download_error(last_error or Exception())}")
 
 
 def download_youtube_video(

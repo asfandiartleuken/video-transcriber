@@ -57,6 +57,14 @@ python main.py
 python -m unittest discover -s tests -v
 ```
 
+Егер URL жүктегенде `SSL: CERTIFICATE_VERIFY_FAILED` қатесі шықса:
+
+```bash
+pip install -r requirements.txt --upgrade
+```
+
+Бұл команда сертификаттар пакетін (`certifi`) жаңартып, Windows-та жиі кездесетін SSL chain мәселесін түзетеді.
+
 ---
 
 ## 🪟 Windows-қа `.exe` шығару
