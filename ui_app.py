@@ -238,7 +238,7 @@ class VideoTranscriberApp(ctk.CTk):
 
     def _select_file(self):
         path = filedialog.askopenfilename(
-            title="Видео файл таңдаңыз",
+            title="Аудио/видео файл таңдаңыз",
             initialdir=self._settings.get("last_dir", os.path.expanduser("~")),
             filetypes=VIDEO_EXTENSIONS,
         )
@@ -269,14 +269,22 @@ class VideoTranscriberApp(ctk.CTk):
         self._file_label.configure(text=f"🔗  {short}", text_color="#5bc8f5")
 
     def _start_transcription(self):
+        self._save_current_settings()
         if not self._video_path:
-            messagebox.showwarning("Ескерту", "Алдымен видео файл таңдаңыз немесе URL енгізіңіз.")
+            messagebox.showwarning("Ескерту", "Алдымен аудио/видео файл таңдаңыз немесе URL енгізіңіз.")
             return
-        if not is_url(self._video_path) and not os.path.isfile(self._video_path):
+        self._run_transcription_job(self._video_path, "Дайындалуда…")
+
+    def _cancel_transcription(self):
+        self._cancel_event.set()
+        self._set_progress(0, "⏹  Тоқтатылды")
+        self._transcribe_btn.configure(state="normal")
+        self._cancel_btn.configure(state="disabled")
+
+    def _run_transcription_job(self, video_path: str, status_text: str):
+        if not is_url(video_path) and not os.path.isfile(video_path):
             messagebox.showerror("Қате", "Таңдалған файл табылмады.")
             return
-
-        self._save_current_settings()
 
         self._job_counter += 1
         self._active_job_id = self._job_counter
@@ -290,7 +298,7 @@ class VideoTranscriberApp(ctk.CTk):
         self._copy_btn.configure(state="disabled")
         self._text_box.delete("1.0", "end")
         self._stats_label.configure(text="")
-        self._set_progress(0.02, "Дайындалуда…")
+        self._set_progress(0.02, status_text)
 
         lang_raw = self._lang_entry.get().strip().lower()
         language = None if lang_raw in ("", "auto") else lang_raw
@@ -298,15 +306,9 @@ class VideoTranscriberApp(ctk.CTk):
 
         threading.Thread(
             target=self._transcribe_worker,
-            args=(job_id, self._video_path, self._model_var.get(), language),
+            args=(job_id, video_path, self._model_var.get(), language),
             daemon=True,
         ).start()
-
-    def _cancel_transcription(self):
-        self._cancel_event.set()
-        self._set_progress(0, "⏹  Тоқтатылды")
-        self._transcribe_btn.configure(state="normal")
-        self._cancel_btn.configure(state="disabled")
 
     def _transcribe_worker(self, job_id: int, video_path: str, model_name: str, language: str | None):
         service = TranscriptionService(self._cancel_event)

@@ -8,7 +8,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 VIDEO_EXTENSIONS = (
-    ("Видео файлдар", "*.mp4 *.mkv *.avi *.mov *.webm"),
+    ("Аудио/видео файлдар", "*.mp4 *.mkv *.avi *.mov *.webm *.mp3 *.wav *.m4a *.aac *.flac *.ogg"),
     ("Барлық файлдар", "*.*"),
 )
 WHISPER_MODELS = ["tiny", "base", "small", "medium"]

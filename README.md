@@ -31,8 +31,6 @@
 
 ## 🚀 Іске қосу (source)
 
-Бұл жоба қазір тек source-тан іске қосылады (`Releases`/installer жоқ).
-
 Алдымен жүйелік тәуелділіктерді орнатыңыз:
 
 - `ffmpeg` (міндетті)
@@ -58,6 +56,75 @@ python main.py
 ```bash
 python -m unittest discover -s tests -v
 ```
+
+---
+
+## 🪟 Windows-қа `.exe` шығару
+
+Жобада Windows build үшін дайын файлдар бар:
+
+- `VideoTranscriber.spec` (PyInstaller config)
+- `requirements-build.txt` (build тәуелділігі)
+- `scripts/build_windows.ps1` (бір командамен build)
+- `.github/installer/VideoTranscriber.iss` (Inno Setup installer)
+
+### 1) Тек `.exe` (portable папка) жасау
+
+PowerShell ішінде:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\build_windows.ps1 -Clean
+```
+
+Нәтиже:
+
+- `dist\VideoTranscriber\VideoTranscriber.exe`
+
+### 2) Installer (`.exe setup`) жасау
+
+Алдымен Inno Setup орнатыңыз:
+
+```powershell
+winget install JRSoftware.InnoSetup
+```
+
+Сосын:
+
+```powershell
+.\scripts\build_windows.ps1 -Clean -CreateInstaller -Version 1.0.0
+```
+
+Нәтиже (repo түбірінде):
+
+- `VideoTranscriber-Setup.exe`
+
+### 3) ffmpeg/ffprobe/yt-dlp
+
+Екі жол бар:
+
+1. Жүйеге орнату:
+   - `winget install ffmpeg yt-dlp`
+2. Немесе жоба түбірінде `tools\` бумасын жасап, ішіне:
+   - `ffmpeg.exe`
+   - `ffprobe.exe`
+   - `yt-dlp.exe`
+
+Қолданба алдымен `tools\` ішін тексереді, содан кейін ғана жүйелік `PATH`-ты қарайды.
+
+---
+
+## 🐧 Linux-та отырып Windows installer жасау
+
+Егер өзіңіз Linux қолдансаңыз, Windows build-ті GitHub Actions жасайды.
+
+1. Кодты GitHub-қа push етіңіз.
+2. GitHub-та `Actions` -> `Build Windows Installer` workflow-ін ашыңыз.
+3. `Run workflow` басып, версия енгізіңіз (мысалы `1.0.0`).
+4. Build біткен соң `Artifacts` бөлімінен:
+   - `VideoTranscriber-Setup-<version>` (installer)
+   - `VideoTranscriber-Portable-<version>` (portable build)
+5. Егер `v1.0.0` сияқты tag push етсеңіз, installer автоматты түрде Release asset болып жүктеледі.
 
 ---
 
