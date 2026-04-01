@@ -1,6 +1,6 @@
 import unittest
 
-from ui_shortcuts import get_edit_target, resolve_control_shortcut
+from ui_shortcuts import get_edit_target, iter_shortcut_sequences, resolve_control_shortcut
 
 
 class EntryLike:
@@ -40,6 +40,17 @@ class TestUiShortcuts(unittest.TestCase):
         self.assertIs(get_edit_target(Wrapper("_entry", entry)), entry)
         self.assertIs(get_edit_target(Wrapper("_textbox", text)), text)
         self.assertIsNone(get_edit_target(object()))
+
+    def test_shortcut_sequences_cover_windows_and_cyrillic_variants(self):
+        sequences = list(iter_shortcut_sequences())
+
+        self.assertIn(("copy", "<Control-c>"), sequences)
+        self.assertIn(("copy", "<Control-с>"), sequences)
+        self.assertIn(("paste", "<Control-v>"), sequences)
+        self.assertIn(("paste", "<Control-м>"), sequences)
+        self.assertIn(("cut", "<Control-x>"), sequences)
+        self.assertIn(("select_all", "<Control-ф>"), sequences)
+        self.assertIn(("copy", "<Control-Insert>"), sequences)
 
 
 if __name__ == "__main__":

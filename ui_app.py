@@ -13,7 +13,7 @@ from app_errors import CancelledError, DependencyError, DownloadError
 from media_tools import get_video_duration
 from services.transcription_service import TranscriptionService
 from transcriber_core import is_url
-from ui_shortcuts import get_edit_target, resolve_control_shortcut
+from ui_shortcuts import get_edit_target, iter_edit_targets, iter_shortcut_sequences, resolve_control_shortcut
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -239,14 +239,21 @@ class VideoTranscriberApp(ctk.CTk):
         self._reset_btn.grid(row=0, column=5, padx=4)
 
     def _bind_shortcuts(self):
+        editable_widgets = (self._url_entry, self._lang_entry, self._text_box)
+        for widget in editable_widgets:
+            for target in iter_edit_targets(widget):
+                for action, sequence in iter_shortcut_sequences():
+                    target.bind(sequence, lambda event, shortcut=action: self._handle_shortcut_action(event, shortcut), add="+")
         self.bind_all("<Control-KeyPress>", self._handle_control_shortcut, add="+")
 
     def _handle_control_shortcut(self, event):
         action = resolve_control_shortcut(event.keysym, event.char)
         if action is None:
             return None
+        return self._handle_shortcut_action(event, action)
 
-        target = get_edit_target(event.widget)
+    def _handle_shortcut_action(self, event, action: str):
+        target = get_edit_target(event.widget) or get_edit_target(self.focus_get())
         if target is None:
             return None
 
