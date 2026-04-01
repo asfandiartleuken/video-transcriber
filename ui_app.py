@@ -13,7 +13,7 @@ from app_errors import CancelledError, DependencyError, DownloadError
 from media_tools import get_video_duration
 from services.transcription_service import TranscriptionService
 from transcriber_core import is_url
-from ui_shortcuts import get_edit_target, iter_edit_targets, iter_virtual_shortcut_sequences, resolve_control_shortcut
+from ui_shortcuts import iter_edit_targets, iter_virtual_shortcut_sequences, perform_edit_action, resolve_control_shortcut
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -247,38 +247,26 @@ class VideoTranscriberApp(ctk.CTk):
                     target.bind(sequence, lambda event, shortcut=action: self._handle_shortcut_action(event, shortcut), add="+")
 
     def _handle_control_shortcut(self, event):
-        action = resolve_control_shortcut(event.keysym, event.char)
+        action = resolve_control_shortcut(event.keysym, event.char, event.keycode)
         if action is None:
             return None
         return self._handle_shortcut_action(event, action)
 
     def _handle_shortcut_action(self, event, action: str):
-        target = get_edit_target(event.widget) or get_edit_target(self.focus_get())
-        if target is None:
-            return None
-
         try:
-            if action == "select_all":
-                if hasattr(target, "select_range"):
-                    target.select_range(0, "end")
-                    target.icursor("end")
-                    return "break"
-                if hasattr(target, "tag_add"):
-                    target.tag_add("sel", "1.0", "end-1c")
-                    target.mark_set("insert", "1.0")
-                    target.see("insert")
-                    return "break"
-                return None
-
-            virtual_event = {
-                "copy": "<<Copy>>",
-                "paste": "<<Paste>>",
-                "cut": "<<Cut>>",
-            }[action]
-            target.event_generate(virtual_event)
-            return "break"
+            handled = perform_edit_action(
+                event.widget or self.focus_get(),
+                action,
+                self.clipboard_get,
+                self._write_clipboard_text,
+            )
+            return "break" if handled else None
         except tk.TclError:
             return "break"
+
+    def _write_clipboard_text(self, text: str):
+        self.clipboard_clear()
+        self.clipboard_append(text)
 
     def _select_file(self):
         path = filedialog.askopenfilename(
