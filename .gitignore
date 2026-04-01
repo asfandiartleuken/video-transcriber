@@ -13,6 +13,8 @@ dist/
 # IDE
 .idea/
 .vscode/
+.codex
+.codex/
 
 # OS
 .DS_Store

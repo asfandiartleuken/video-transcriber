@@ -2,6 +2,7 @@ import os
 import queue
 import threading
 import logging
+import tkinter as tk
 from tkinter import filedialog, messagebox
 from typing import Any
 
@@ -12,6 +13,7 @@ from app_errors import CancelledError, DependencyError, DownloadError
 from media_tools import get_video_duration
 from services.transcription_service import TranscriptionService
 from transcriber_core import is_url
+from ui_shortcuts import get_edit_target, resolve_control_shortcut
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -37,6 +39,7 @@ class VideoTranscriberApp(ctk.CTk):
         self._active_job_id = 0
 
         self._build_ui()
+        self._bind_shortcuts()
         self._poll_queue()
 
     def _build_ui(self):
@@ -235,6 +238,40 @@ class VideoTranscriberApp(ctk.CTk):
         )
         self._reset_btn.grid(row=0, column=5, padx=4)
 
+    def _bind_shortcuts(self):
+        self.bind_all("<Control-KeyPress>", self._handle_control_shortcut, add="+")
+
+    def _handle_control_shortcut(self, event):
+        action = resolve_control_shortcut(event.keysym, event.char)
+        if action is None:
+            return None
+
+        target = get_edit_target(event.widget)
+        if target is None:
+            return None
+
+        try:
+            if action == "select_all":
+                if hasattr(target, "select_range"):
+                    target.select_range(0, "end")
+                    target.icursor("end")
+                    return "break"
+                if hasattr(target, "tag_add"):
+                    target.tag_add("sel", "1.0", "end-1c")
+                    target.mark_set("insert", "1.0")
+                    target.see("insert")
+                    return "break"
+                return None
+
+            virtual_event = {
+                "copy": "<<Copy>>",
+                "paste": "<<Paste>>",
+                "cut": "<<Cut>>",
+            }[action]
+            target.event_generate(virtual_event)
+            return "break"
+        except tk.TclError:
+            return "break"
 
     def _select_file(self):
         path = filedialog.askopenfilename(
