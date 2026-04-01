@@ -5,11 +5,10 @@ _COPY_KEYS = {"c", "с"}
 _PASTE_KEYS = {"v", "м"}
 _CUT_KEYS = {"x", "ч"}
 _SELECT_ALL_KEYS = {"a", "ф"}
-_SHORTCUT_SEQUENCES = {
-    "copy": ("<Control-c>", "<Control-C>", "<Control-с>", "<Control-С>", "<Control-Insert>"),
-    "paste": ("<Control-v>", "<Control-V>", "<Control-м>", "<Control-М>", "<Shift-Insert>"),
-    "cut": ("<Control-x>", "<Control-X>", "<Control-ч>", "<Control-Ч>", "<Shift-Delete>"),
-    "select_all": ("<Control-a>", "<Control-A>", "<Control-ф>", "<Control-Ф>"),
+_VIRTUAL_SHORTCUT_SEQUENCES = {
+    "copy": ("<Control-Insert>",),
+    "paste": ("<Shift-Insert>",),
+    "cut": ("<Shift-Delete>",),
 }
 
 
@@ -50,7 +49,7 @@ def iter_edit_targets(widget):
         yield candidate
 
 
-def iter_shortcut_sequences():
-    for action, sequences in _SHORTCUT_SEQUENCES.items():
+def iter_virtual_shortcut_sequences():
+    for action, sequences in _VIRTUAL_SHORTCUT_SEQUENCES.items():
         for sequence in sequences:
             yield action, sequence
