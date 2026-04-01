@@ -100,12 +100,14 @@ winget install JRSoftware.InnoSetup
 Сосын:
 
 ```powershell
-.\scripts\build_windows.ps1 -Clean -CreateInstaller -Version 1.0.0
+.\scripts\build_windows.ps1 -Clean -DownloadTools -CreateInstaller -Version 1.0.0
 ```
 
 Нәтиже (repo түбірінде):
 
 - `VideoTranscriber-Setup.exe`
+- Installer ішінде `ffmpeg.exe`, `ffprobe.exe`, `yt-dlp.exe` бірге келеді
+- Installer-де `{app}\tools` бумасын Windows user `PATH`-ына қосатын опция бар
 
 ### 3) ffmpeg/ffprobe/yt-dlp
 
@@ -117,8 +119,11 @@ winget install JRSoftware.InnoSetup
    - `ffmpeg.exe`
    - `ffprobe.exe`
    - `yt-dlp.exe`
+3. Немесе build кезінде автоматты жүктеу:
+   - `.\scripts\build_windows.ps1 -DownloadTools`
 
 Қолданба алдымен `tools\` ішін тексереді, содан кейін ғана жүйелік `PATH`-ты қарайды.
+GitHub Actions арқылы жиналған Windows installer bundled tools-пен бірге шығады.
 
 ---
 

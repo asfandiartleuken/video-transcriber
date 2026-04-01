@@ -2,6 +2,7 @@ param(
     [string]$Version = "1.0.0",
     [switch]$CreateInstaller,
     [switch]$Clean,
+    [switch]$DownloadTools,
     [string]$VenvPath = ".venv-winbuild"
 )
 
@@ -36,6 +37,20 @@ Write-Host "[2/5] Тәуелділіктер орнатылуда..."
 & $python -m pip install --upgrade pip
 & $pip install -r requirements.txt -r requirements-build.txt
 
+$toolsDir = Join-Path $root "tools"
+if (-not (Test-Path $toolsDir)) {
+    if ($DownloadTools) {
+        Write-Host "[tools] tools/ табылмады, bundled tools жүктелуде..."
+        & (Join-Path $PSScriptRoot "prepare_windows_tools.ps1")
+    } else {
+        Write-Warning "tools/ бумасы жоқ. ffmpeg/ffprobe/yt-dlp PATH арқылы табылуы керек немесе tools/ ішіне салыңыз."
+        Write-Warning "Bundled tools керек болса: .\\scripts\\build_windows.ps1 -DownloadTools"
+    }
+} elseif ($DownloadTools) {
+    Write-Host "[tools] Bundled tools жаңартылуда..."
+    & (Join-Path $PSScriptRoot "prepare_windows_tools.ps1")
+}
+
 Write-Host "[3/5] PyInstaller build басталды..."
 & $python -m PyInstaller --noconfirm VideoTranscriber.spec
 
@@ -45,11 +60,6 @@ if (-not (Test-Path $distDir)) {
 }
 
 Write-Host "[4/5] Build дайын: $distDir"
-
-$toolsDir = Join-Path $root "tools"
-if (-not (Test-Path $toolsDir)) {
-    Write-Warning "tools/ бумасы жоқ. ffmpeg/ffprobe/yt-dlp PATH арқылы табылуы керек немесе tools/ ішіне салыңыз."
-}
 
 if ($CreateInstaller) {
     Write-Host "[5/5] Inno Setup installer жасалуда..."

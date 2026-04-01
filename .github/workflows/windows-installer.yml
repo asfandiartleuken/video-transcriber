@@ -44,22 +44,7 @@ jobs:
 
       - name: Prepare bundled tools
         shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force tools | Out-Null
-
-          Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "tools\yt-dlp.exe"
-
-          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile "ffmpeg.zip"
-          Expand-Archive -Path "ffmpeg.zip" -DestinationPath "ffmpeg" -Force
-
-          $ffmpeg = Get-ChildItem -Path "ffmpeg" -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
-          $ffprobe = Get-ChildItem -Path "ffmpeg" -Recurse -Filter "ffprobe.exe" | Select-Object -First 1
-          if (-not $ffmpeg -or -not $ffprobe) {
-            throw "ffmpeg.exe or ffprobe.exe not found after archive extraction."
-          }
-
-          Copy-Item $ffmpeg.FullName "tools\ffmpeg.exe" -Force
-          Copy-Item $ffprobe.FullName "tools\ffprobe.exe" -Force
+        run: .\scripts\prepare_windows_tools.ps1
 
       - name: Build installer
         shell: pwsh
