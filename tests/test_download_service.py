@@ -6,8 +6,8 @@ import unittest
 from unittest.mock import patch
 import urllib.error
 
-from app_errors import DownloadError
-from services.download_service import download_video, validate_response_headers
+from errors import DownloadError
+from services.download import download_video, validate_response_headers
 
 
 class _FakeResponse:
@@ -41,7 +41,7 @@ class TestDownloadService(unittest.TestCase):
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             dest = tmp.name
         try:
-            with patch("services.download_service.urllib.request.urlopen", return_value=fake) as mock_urlopen:
+            with patch("services.download.urllib.request.urlopen", return_value=fake) as mock_urlopen:
                 download_video(
                     "https://example.com/video.mp4",
                     dest,
@@ -64,7 +64,7 @@ class TestDownloadService(unittest.TestCase):
             dest = tmp.name
         try:
             with patch(
-                "services.download_service.urllib.request.urlopen",
+                "services.download.urllib.request.urlopen",
                 side_effect=urllib.error.URLError(ssl_error),
             ):
                 with self.assertRaises(DownloadError) as err:

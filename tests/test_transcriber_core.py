@@ -1,9 +1,9 @@
 import unittest
 
-from transcriber_core import (
+from utils.formatting import (
+    format_srt_time as seconds_to_srt_time,
     is_url,
     is_youtube_url,
-    seconds_to_srt_time,
     segments_to_srt,
     segments_to_timestamped,
 )

@@ -5,9 +5,7 @@ Video Transcriber — CustomTkinter + OpenAI Whisper
 
 import multiprocessing as mp
 
-from logging_utils import configure_logging
-from media_tools import add_bundled_tools_to_path
-from runtime_utils import ensure_stdio_streams
+from utils import add_bundled_tools_to_path, configure_logging, ensure_stdio_streams
 from ui_app import VideoTranscriberApp
 
 configure_logging()

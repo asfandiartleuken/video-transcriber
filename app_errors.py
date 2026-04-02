@@ -1,10 +1,3 @@
-class CancelledError(Exception):
-    pass
+from errors import CancelledError, DependencyError, DownloadError
 
-
-class DependencyError(RuntimeError):
-    pass
-
-
-class DownloadError(RuntimeError):
-    pass
+__all__ = ["CancelledError", "DependencyError", "DownloadError"]

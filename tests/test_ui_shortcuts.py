@@ -1,6 +1,11 @@
 import unittest
 
-from ui_shortcuts import get_edit_target, iter_virtual_shortcut_sequences, perform_edit_action, resolve_control_shortcut
+from ui.shortcuts import (
+    get_edit_target,
+    iter_virtual_shortcut_sequences,
+    perform_edit_action,
+    resolve_control_shortcut,
+)
 
 
 class EntryLike:
