@@ -1,74 +1,80 @@
-param(
-    [string]$Version = "1.0.0",
-    [switch]$CreateInstaller,
+Param(
     [switch]$Clean,
+    [switch]$OneFile,
     [switch]$DownloadTools,
-    [string]$VenvPath = ".venv-winbuild"
+    [string]$Version = "dev"
 )
 
-$ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
-if ($env:OS -ne "Windows_NT") {
-    throw "Бұл скрипт Windows PowerShell/Pwsh ішінде орындалуы керек."
+$repoRoot = Split-Path -Parent $PSCommandPath | Split-Path -Parent
+Set-Location $repoRoot
+
+Write-Host "==> Using repo root: $repoRoot"
+
+# Ensure venv is active
+if (-not (Get-Command "python" -ErrorAction SilentlyContinue)) {
+    throw "Python not found in PATH. Activate your venv first."
 }
 
-$root = Split-Path -Parent $PSScriptRoot
-Set-Location $root
+# Ensure placeholder icon exists
+$iconPath = Join-Path $repoRoot "assets/app.ico"
+if (-not (Test-Path $iconPath)) {
+    Write-Host "==> Generating placeholder icon"
+    python assets/make_icon.py
+}
 
 if ($Clean) {
-    Remove-Item -Recurse -Force "$root\\build" -ErrorAction SilentlyContinue
-    Remove-Item -Recurse -Force "$root\\dist" -ErrorAction SilentlyContinue
+    Write-Host "==> Cleaning build artifacts"
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue build,dist,__pycache__
+    Get-ChildItem -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-if (-not (Test-Path $VenvPath)) {
-    Write-Host "[1/5] Virtual environment жасалуда..."
-    py -m venv $VenvPath
-}
+# Optional: download tools into tools/ for bundling
+if ($DownloadTools) {
+    $toolsDir = Join-Path $repoRoot "tools"
+    New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
 
-$python = Join-Path $VenvPath "Scripts\\python.exe"
-$pip = Join-Path $VenvPath "Scripts\\pip.exe"
+    $downloads = @(
+        @{ Name = "yt-dlp.exe"; Url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" },
+        @{ Name = "ffmpeg.zip"; Url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" }
+    )
 
-if (-not (Test-Path $python)) {
-    throw "Python executable табылмады: $python"
-}
-
-Write-Host "[2/5] Тәуелділіктер орнатылуда..."
-& $python -m pip install --upgrade pip
-& $pip install -r requirements.txt -r requirements-build.txt
-
-$toolsDir = Join-Path $root "tools"
-if (-not (Test-Path $toolsDir)) {
-    if ($DownloadTools) {
-        Write-Host "[tools] tools/ табылмады, bundled tools жүктелуде..."
-        & (Join-Path $PSScriptRoot "prepare_windows_tools.ps1")
-    } else {
-        Write-Warning "tools/ бумасы жоқ. ffmpeg/ffprobe/yt-dlp PATH арқылы табылуы керек немесе tools/ ішіне салыңыз."
-        Write-Warning "Bundled tools керек болса: .\\scripts\\build_windows.ps1 -DownloadTools"
+    foreach ($item in $downloads) {
+        $outPath = Join-Path $toolsDir $item.Name
+        Write-Host "==> Downloading $($item.Name)"
+        Invoke-WebRequest -Uri $item.Url -OutFile $outPath -UseBasicParsing
+        if ($item.Name -eq "ffmpeg.zip") {
+            Write-Host "==> Extracting ffmpeg.zip"
+            Expand-Archive -Force $outPath -DestinationPath $toolsDir
+            Remove-Item $outPath
+            $ffmpegExe = Get-ChildItem -Recurse -Path $toolsDir -Filter "ffmpeg.exe" | Select-Object -First 1
+            $ffprobeExe = Get-ChildItem -Recurse -Path $toolsDir -Filter "ffprobe.exe" | Select-Object -First 1
+            if ($ffmpegExe) { Copy-Item $ffmpegExe.FullName -Destination (Join-Path $toolsDir "ffmpeg.exe") -Force }
+            if ($ffprobeExe) { Copy-Item $ffprobeExe.FullName -Destination (Join-Path $toolsDir "ffprobe.exe") -Force }
+            # Clean extracted folders
+            Get-ChildItem -Directory $toolsDir | Where-Object { $_.Name -notlike "*.exe" } | Remove-Item -Recurse -Force
+        }
     }
-} elseif ($DownloadTools) {
-    Write-Host "[tools] Bundled tools жаңартылуда..."
-    & (Join-Path $PSScriptRoot "prepare_windows_tools.ps1")
 }
 
-Write-Host "[3/5] PyInstaller build басталды..."
-& $python -m PyInstaller --noconfirm VideoTranscriber.spec
+$pyinstallerArgs = @(
+    "VideoTranscriber.spec"
+)
 
-$distDir = Join-Path $root "dist\\VideoTranscriber"
-if (-not (Test-Path $distDir)) {
-    throw "Build сәтсіз: $distDir табылмады."
+if ($OneFile) {
+    # Override spec-based COLLECT with onefile build
+    $pyinstallerArgs = @(
+        "--noconfirm",
+        "--noconsole",
+        "--name", "VideoTranscriber",
+        "--icon", "assets/app.ico",
+        "main.py"
+    )
 }
 
-Write-Host "[4/5] Build дайын: $distDir"
+Write-Host "==> Running PyInstaller"
+pyinstaller @pyinstallerArgs
 
-if ($CreateInstaller) {
-    Write-Host "[5/5] Inno Setup installer жасалуда..."
-    $iscc = Get-Command iscc -ErrorAction SilentlyContinue
-    if (-not $iscc) {
-        throw "iscc (Inno Setup Compiler) табылмады. Inno Setup орнатыңыз: winget install JRSoftware.InnoSetup"
-    }
-    & $iscc.Source "/DMyAppVersion=$Version" ".github\\installer\\VideoTranscriber.iss"
-    Write-Host "Installer дайын: $root"
-} else {
-    Write-Host "[5/5] Installer қадамы өткізіліп кетті. Қаласаңыз: .\\scripts\\build_windows.ps1 -CreateInstaller -Version $Version"
-}
+Write-Host "==> Done. Output: dist\VideoTranscriber"

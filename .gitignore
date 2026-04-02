@@ -3,18 +3,31 @@ venv/
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
 
 # PyInstaller
 build/
 dist/
 *.spec
 !VideoTranscriber.spec
+dist/*.zip
+dist/*.exe
 
 # IDE
 .idea/
 .vscode/
 .codex
 .codex/
+
+# Local config / secrets / logs
+.env
+*.log
+
+# Optional tools (downloaded binaries)
+tools/*.exe
+
 
 # OS
 .DS_Store

@@ -15,6 +15,14 @@ tools_dir = project_root / "tools"
 if tools_dir.is_dir():
     datas.append((str(tools_dir), "tools"))
 
+assets_dir = project_root / "assets"
+icon_path = None
+if assets_dir.is_dir():
+    datas.append((str(assets_dir), "assets"))
+    candidate_icon = assets_dir / "app.ico"
+    if candidate_icon.is_file():
+        icon_path = str(candidate_icon)
+
 hiddenimports = collect_submodules("whisper")
 hiddenimports += ["certifi"]
 
@@ -45,6 +53,7 @@ exe = EXE(
     upx=True,
     console=False,
     disable_windowed_traceback=False,
+    icon=icon_path,
 )
 
 coll = COLLECT(

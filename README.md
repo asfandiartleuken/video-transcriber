@@ -1,186 +1,72 @@
 # 🎙 Video Transcriber
 
-Видеодан сөйлеуді автоматты түрде текстке айналдыратын desktop қолданба.
-**OpenAI Whisper** + **CustomTkinter** негізінде жасалған.
+CustomTkinter desktop app that downloads media (URL/YouTube or local file), extracts audio with ffmpeg, and transcribes with OpenAI Whisper.
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python)
+![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
----
+## Requirements
+- Python 3.10+
+- `ffmpeg` and `ffprobe` (in PATH or placed in `tools/`)
+- `yt-dlp` for YouTube URLs (in PATH or placed in `tools/`)
 
-## ✨ Мүмкіндіктер
-
-| Мүмкіндік | Сипаттама |
-|-----------|-----------|
-| 🎥 Локал файл | MP4, MKV, AVI, MOV, WEBM форматтары |
-| 🔗 URL қолдау | Тікелей MP4 сілтемесінен транскрипция |
-| 🤖 Whisper модельдері | tiny · base · small · medium |
-| 🕐 Timestamps | Уақыт белгілері бар мәтін |
-| 🎞 SRT экспорт | Субтитр файлы жасау |
-| 📄 TXT экспорт | Қарапайым мәтін файлы |
-| 📋 Clipboard | Бір кликпен мәтінді көшіру |
-| 🕐 Көрініс ауыстыру | Қарапайым мәтін / timestamps арасында ауысу |
-| ♻ Тазалау | Нәтижені бір батырмамен тазарту |
-| ⏹ Тоқтату | Транскрипцияны Cancel ету |
-| 📊 Статистика | Сөз / таңба саны |
-| 💾 Параметрлер | Автоматты сақталады |
-| 🌙 Dark theme | Заманауи CustomTkinter интерфейс |
-
----
-
-## 🚀 Іске қосу (source)
-
-Алдымен жүйелік тәуелділіктерді орнатыңыз:
-
-- `ffmpeg` (міндетті)
-- `yt-dlp` (тек YouTube URL үшін)
-
-Мысал:
-
-- Arch Linux: `sudo pacman -S ffmpeg yt-dlp`
-- macOS: `brew install ffmpeg yt-dlp`
-- Windows: `winget install ffmpeg yt-dlp`
-
-Содан кейін:
-
+## Local development
 ```bash
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python main.py
 ```
-
-Тесттер:
-
+Tests:
 ```bash
 python -m unittest discover -s tests -v
 ```
+Logs: written to the platform config dir (e.g., `%APPDATA%\video-transcriber\logs\app.log`).
 
-Егер URL жүктегенде `SSL: CERTIFICATE_VERIFY_FAILED` қатесі шықса:
+## Build Windows executable (PyInstaller)
+Artifacts: `VideoTranscriber.spec`, `scripts/build_windows.ps1`, `requirements-build.txt`, `assets/app.ico` (replace with your icon).
 
-```bash
-pip install -r requirements.txt --upgrade
-```
-
-Бұл команда сертификаттар пакетін (`certifi`) жаңартып, Windows-та жиі кездесетін SSL chain мәселесін түзетеді.
-
----
-
-## 🪟 Windows-қа `.exe` шығару
-
-Жобада Windows build үшін дайын файлдар бар:
-
-- `VideoTranscriber.spec` (PyInstaller config)
-- `requirements-build.txt` (build тәуелділігі)
-- `scripts/build_windows.ps1` (бір командамен build)
-- `.github/installer/VideoTranscriber.iss` (Inno Setup installer)
-
-### 1) Тек `.exe` (portable папка) жасау
-
-PowerShell ішінде:
-
+Portable (one-folder, recommended):
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\build_windows.ps1 -Clean
+powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1 -Clean
 ```
+Output: `dist\VideoTranscriber\VideoTranscriber.exe`
 
-Нәтиже:
-
-- `dist\VideoTranscriber\VideoTranscriber.exe`
-
-### 2) Installer (`.exe setup`) жасау
-
-Алдымен Inno Setup орнатыңыз:
-
+One-file (slower startup):
 ```powershell
-winget install JRSoftware.InnoSetup
+powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1 -Clean -OneFile
 ```
 
-Сосын:
+Optional tool bundling: add `-DownloadTools` or drop `ffmpeg.exe`, `ffprobe.exe`, `yt-dlp.exe` into `tools/` before building.
 
+## Create installer (Inno Setup)
+Requires Inno Setup (`choco install innosetup --yes`). After PyInstaller build:
 ```powershell
-.\scripts\build_windows.ps1 -Clean -DownloadTools -CreateInstaller -Version 1.0.0
+powershell -ExecutionPolicy Bypass -File .\scripts\make_installer.ps1 -Version 1.0.0
 ```
+Output: `dist\VideoTranscriber-Setup-1.0.0.exe`
 
-Нәтиже (repo түбірінде):
+## Publish a GitHub release
+1) Build portable and installer locally (or run the CI workflow below).
+2) Tag your release, e.g. `git tag v1.0.0 && git push origin v1.0.0`.
+3) Create a GitHub Release for the tag and upload:
+   - `dist/VideoTranscriber-portable.zip` (if zipped) or the portable folder
+   - `dist/VideoTranscriber-Setup-<version>.exe`
+4) Add release notes (highlights, fixes, known issues).
 
-- `VideoTranscriber-Setup.exe`
-- Installer ішінде `ffmpeg.exe`, `ffprobe.exe`, `yt-dlp.exe` бірге келеді
-- Installer-де `{app}\tools` бумасын Windows user `PATH`-ына қосатын опция бар
+CI helper:
+- `.github/workflows/windows-build.yml` (manual dispatch) builds portable + installer, downloads tools, runs a smoke test, and uploads artifacts you can attach to a Release.
 
-### 3) ffmpeg/ffprobe/yt-dlp
+## Project layout
+- `main.py` — entrypoint, logging/runtime/tool PATH setup
+- `ui_app.py` — main CustomTkinter window
+- `ui/` — widgets and shortcut handling
+- `services/` — download/transcription orchestration
+- `utils/` — tool resolution, logging, runtime helpers
+- `assets/` — app icon
+- `scripts/` — build, installer, smoke-test helpers
+- `installer/` — Inno Setup script
 
-Екі жол бар:
-
-1. Жүйеге орнату:
-   - `winget install ffmpeg yt-dlp`
-2. Немесе жоба түбірінде `tools\` бумасын жасап, ішіне:
-   - `ffmpeg.exe`
-   - `ffprobe.exe`
-   - `yt-dlp.exe`
-3. Немесе build кезінде автоматты жүктеу:
-   - `.\scripts\build_windows.ps1 -DownloadTools`
-
-Қолданба алдымен `tools\` ішін тексереді, содан кейін ғана жүйелік `PATH`-ты қарайды.
-GitHub Actions арқылы жиналған Windows installer bundled tools-пен бірге шығады.
-
----
-
-## 🐧 Linux-та отырып Windows installer жасау
-
-Егер өзіңіз Linux қолдансаңыз, Windows build-ті GitHub Actions жасайды.
-
-1. Кодты GitHub-қа push етіңіз.
-2. GitHub-та `Actions` -> `Build Windows Installer` workflow-ін ашыңыз.
-3. `Run workflow` басып, версия енгізіңіз (мысалы `1.0.0`).
-4. Build біткен соң `Artifacts` бөлімінен:
-   - `VideoTranscriber-Setup-<version>` (installer)
-   - `VideoTranscriber-Portable-<version>` (portable build)
-5. Егер `v1.0.0` сияқты tag push етсеңіз, installer автоматты түрде Release asset болып жүктеледі.
-
----
-
-## ⚙️ Whisper модельдері
-
-| Модель | Жылдамдық | Дәлдік | Диск |
-|--------|-----------|--------|------|
-| `tiny` | ⚡ Өте жылдам | Төмен | ~75 MB |
-| `base` | 🚀 Жылдам | Орташа | ~145 MB |
-| `small` | 🔄 Орташа | Жақсы | ~465 MB |
-| `medium` | 🐢 Баяу | Өте жақсы | ~1.5 GB |
-
----
-
-## 🛠 Технологиялар
-
-- [OpenAI Whisper](https://github.com/openai/whisper) — сөйлеуді тану
-- [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) — GUI
-- [ffmpeg](https://ffmpeg.org/) — аудио/видео өңдеу
-- Python 3.9+
-
----
-
-## 🧱 Архитектура
-
-- `main.py` — entrypoint, logging/runtime setup
-- `ui_app.py` — CustomTkinter интерфейсі
-- `services/transcription_service.py` — транскрипция orchestration
-- `services/download_service.py` — URL/YouTube жүктеу
-- `media_tools.py` — ffmpeg/ffprobe, media validation
-- `transcriber_core.py` — core utility функциялары
-- `app_config.py` — settings load/save
-- `tests/` — unit тесттер
-
----
-
-## 🪵 Логтар
-
-- Лог файлы автоматты түрде сақталады: `~/.config/video-transcriber/logs/app.log` (Linux жүйесінде)
-- Windows/macOS-та осыған эквивалент app config директориясы қолданылады
-
----
-
-## 📄 Лицензия
-
+## License
 MIT License © 2026 [asfandiartleuken](https://github.com/asfandiartleuken)
