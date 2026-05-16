@@ -32,6 +32,18 @@ class TestDownloadService(unittest.TestCase):
         with self.assertRaises(DownloadError):
             validate_response_headers({"Content-Type": "text/html", "Content-Length": "10"})
 
+    def test_validate_response_headers_accepts_audio_type(self):
+        total_size = validate_response_headers(
+            {"Content-Type": "audio/mpeg", "Content-Length": "10"}
+        )
+        self.assertEqual(total_size, 10)
+
+    def test_validate_response_headers_ignores_invalid_length(self):
+        total_size = validate_response_headers(
+            {"Content-Type": "video/mp4", "Content-Length": "abc"}
+        )
+        self.assertEqual(total_size, 0)
+
     def test_download_video_success(self):
         fake = _FakeResponse(
             chunks=[b"hello ", b"world"],
@@ -41,7 +53,10 @@ class TestDownloadService(unittest.TestCase):
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             dest = tmp.name
         try:
-            with patch("services.download.urllib.request.urlopen", return_value=fake) as mock_urlopen:
+            with patch(
+                "services.download.urllib.request.urlopen",
+                return_value=fake,
+            ) as mock_urlopen:
                 download_video(
                     "https://example.com/video.mp4",
                     dest,

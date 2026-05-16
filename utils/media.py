@@ -22,8 +22,6 @@ def get_app_root() -> Path:
 def get_tool_binary(tool_name: str) -> str | None:
     app_root = get_app_root()
     candidates = [tool_name]
-    if os.name == "nt" and not tool_name.lower().endswith(".exe"):
-        candidates.append(f"{tool_name}.exe")
 
     for candidate in candidates:
         bundled = app_root / "tools" / candidate
@@ -57,7 +55,6 @@ def ensure_dependencies() -> None:
     raise DependencyError(
         f"Қажетті құрал(дар) табылмады: {tools}\n\n"
         "Орнату жолдары:\n"
-        "  • Windows: winget install ffmpeg\n"
         "  • Arch Linux: sudo pacman -S ffmpeg\n"
         "  • macOS: brew install ffmpeg"
     )

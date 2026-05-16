@@ -14,7 +14,7 @@ DOWNLOAD_TIMEOUT_SECONDS = 30
 DOWNLOAD_RETRIES = 2
 DOWNLOAD_CHUNK_SIZE = 1024 * 64
 MAX_DOWNLOAD_SIZE_MB = 1024
-ALLOWED_CONTENT_PREFIXES = ("video/",)
+ALLOWED_CONTENT_PREFIXES = ("video/", "audio/")
 ALLOWED_CONTENT_TYPES = {"application/octet-stream"}
 
 
@@ -40,10 +40,12 @@ def _format_download_error(error: Exception) -> str:
 
 
 def validate_response_headers(headers: Any) -> int:
-    total_size = int(headers.get("Content-Length", 0) or 0)
+    total_size = _parse_content_length(headers)
     max_bytes = MAX_DOWNLOAD_SIZE_MB * 1024 * 1024
     if total_size > 0 and total_size > max_bytes:
-        raise DownloadError(f"Видео тым үлкен: {total_size // (1024 * 1024)} MB (лимит {MAX_DOWNLOAD_SIZE_MB} MB)")
+        raise DownloadError(
+            f"Видео тым үлкен: {total_size // (1024 * 1024)} MB (лимит {MAX_DOWNLOAD_SIZE_MB} MB)"
+        )
 
     content_type = (headers.get("Content-Type") or "").split(";")[0].strip().lower()
     if content_type:
@@ -53,6 +55,15 @@ def validate_response_headers(headers: Any) -> int:
         if not is_allowed_type:
             raise DownloadError(f"Қолдау жоқ Content-Type: {content_type}")
     return total_size
+
+
+def _parse_content_length(headers: Any) -> int:
+    raw_length = headers.get("Content-Length", 0)
+    try:
+        total_size = int(raw_length or 0)
+    except (TypeError, ValueError):
+        return 0
+    return max(total_size, 0)
 
 
 def download_video(
@@ -71,7 +82,11 @@ def download_video(
 
     for attempt in range(DOWNLOAD_RETRIES + 1):
         try:
-            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_SECONDS, context=ssl_context) as response:
+            with urllib.request.urlopen(
+                req,
+                timeout=DOWNLOAD_TIMEOUT_SECONDS,
+                context=ssl_context,
+            ) as response:
                 total_size = validate_response_headers(response.headers)
                 downloaded = 0
 
@@ -99,7 +114,9 @@ def download_video(
                 break
             time.sleep(1.0 + attempt * 0.8)
 
-    raise DownloadError(f"Видеоны жүктеу сәтсіз аяқталды: {_format_download_error(last_error or Exception())}")
+    raise DownloadError(
+        f"Видеоны жүктеу сәтсіз аяқталды: {_format_download_error(last_error or Exception())}"
+    )
 
 
 def download_youtube_video(
@@ -113,7 +130,6 @@ def download_youtube_video(
         raise DependencyError(
             "YouTube сілтемесі үшін `yt-dlp` керек.\n\n"
             "Орнату:\n"
-            "  • Windows: winget install yt-dlp\n"
             "  • Arch Linux: sudo pacman -S yt-dlp\n"
             "  • macOS: brew install yt-dlp"
         )

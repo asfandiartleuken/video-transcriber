@@ -23,10 +23,10 @@ from ui import (
     perform_edit_action,
     resolve_control_shortcut,
 )
-from utils import format_timestamped_text, get_video_duration, is_url
+from utils import get_video_duration, is_url
 
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
+ctk.set_appearance_mode("light")
+ctk.set_default_color_theme("green")
 logger = logging.getLogger(__name__)
 
 
@@ -34,8 +34,9 @@ class VideoTranscriberApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("🎙 Видео Транскриптор")
-        self.geometry("900x740")
-        self.minsize(750, 600)
+        self.geometry("1180x820")
+        self.minsize(980, 700)
+        self.configure(fg_color="#F3EEE6")
 
         self._video_path = ""
         self._transcript_text = ""
@@ -43,7 +44,7 @@ class VideoTranscriberApp(ctk.CTk):
         self._ts_text = ""
         self._display_timestamps = False
         self._task_queue: queue.Queue = queue.Queue()
-        self._cancel_event = threading.Event()
+        self._cancel_event: threading.Event | None = None
         self._settings = load_settings()
         self._job_counter = 0
         self._active_job_id = 0
@@ -54,32 +55,37 @@ class VideoTranscriberApp(ctk.CTk):
 
     def _build_ui(self):
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(5, weight=1)
+        self.grid_rowconfigure(2, weight=1)
 
         self._header = HeaderFrame(self)
-        self._header.grid(row=0, column=0, padx=16, pady=(16, 6), sticky="ew")
+        self._header.grid(row=0, column=0, padx=22, pady=(22, 14), sticky="ew")
+
+        top_area = ctk.CTkFrame(self, fg_color="transparent")
+        top_area.grid(row=1, column=0, padx=22, pady=(0, 14), sticky="ew")
+        top_area.grid_columnconfigure(0, weight=3)
+        top_area.grid_columnconfigure(1, weight=2)
 
         self._file_selector = FileSelectorFrame(
-            self,
+            top_area,
             on_file_select=self._select_file,
             on_url_use=self._use_url,
             settings=self._settings,
         )
-        self._file_selector.grid(row=1, column=0, padx=16, pady=6, sticky="ew")
+        self._file_selector.grid(row=0, column=0, padx=(0, 10), pady=(0, 12), sticky="ew")
 
         self._options_frame = OptionsFrame(
-            self,
+            top_area,
             settings=self._settings,
             on_transcribe=self._start_transcription,
             on_cancel=self._cancel_transcription,
         )
-        self._options_frame.grid(row=2, column=0, padx=16, pady=6, sticky="ew")
+        self._options_frame.grid(row=1, column=0, padx=(0, 10), sticky="ew")
 
-        self._progress = ProgressFrame(self)
-        self._progress.grid(row=3, column=0, padx=16, pady=6, sticky="ew")
+        self._progress = ProgressFrame(top_area)
+        self._progress.grid(row=0, column=1, rowspan=2, padx=(10, 0), sticky="nsew")
 
         self._result = ResultFrame(self)
-        self._result.grid(row=4, column=0, padx=16, pady=6, sticky="nsew")
+        self._result.grid(row=2, column=0, padx=22, pady=(0, 12), sticky="nsew")
 
         self._button_bar = ButtonBarFrame(
             self,
@@ -89,7 +95,7 @@ class VideoTranscriberApp(ctk.CTk):
             on_toggle_view=self._toggle_timestamp_view,
             on_reset=self._reset_output,
         )
-        self._button_bar.grid(row=5, column=0, padx=16, pady=(0, 16), sticky="ew")
+        self._button_bar.grid(row=3, column=0, padx=22, pady=(0, 22), sticky="ew")
 
     def _bind_shortcuts(self):
         editable_widgets = (
@@ -142,7 +148,10 @@ class VideoTranscriberApp(ctk.CTk):
             name = os.path.basename(path)
             size_mb = os.path.getsize(path) / (1024 * 1024)
             duration = get_video_duration(path)
-            self._file_selector.update_file_label(f"✅  {name}  ({size_mb:.1f} MB · {duration})", "white")
+            self._file_selector.update_file_label(
+                f"✓  {name}  ({size_mb:.1f} MB · {duration})",
+                "#1D4D42",
+            )
             self._save_current_settings(last_dir=os.path.dirname(path))
         except OSError as exc:
             logger.exception("Failed to read selected file metadata")
@@ -158,7 +167,7 @@ class VideoTranscriberApp(ctk.CTk):
             return
         self._video_path = url
         short = url.split("/")[-1][:55] or url[:55]
-        self._file_selector.update_file_label(f"🔗  {short}", "#5bc8f5")
+        self._file_selector.update_file_label(f"↗  {short}", "#0A8A78")
 
     def _start_transcription(self):
         self._save_current_settings()
@@ -170,7 +179,8 @@ class VideoTranscriberApp(ctk.CTk):
         self._run_transcription_job(self._video_path, "Дайындалуда…")
 
     def _cancel_transcription(self):
-        self._cancel_event.set()
+        if self._cancel_event is not None:
+            self._cancel_event.set()
         self._progress.set_progress(0, "⏹  Тоқтатылды")
         self._options_frame.set_transcribe_state(True)
         self._options_frame.set_cancel_state(False)
@@ -182,7 +192,7 @@ class VideoTranscriberApp(ctk.CTk):
 
         self._job_counter += 1
         self._active_job_id = self._job_counter
-        self._cancel_event.clear()
+        self._cancel_event = threading.Event()
         while not self._task_queue.empty():
             try:
                 self._task_queue.get_nowait()
@@ -198,18 +208,31 @@ class VideoTranscriberApp(ctk.CTk):
 
         language = self._options_frame.get_language()
         job_id = self._active_job_id
+        cancel_event = self._cancel_event
 
         threading.Thread(
             target=self._transcribe_worker,
-            args=(job_id, video_path, self._options_frame.get_model(), language),
+            args=(job_id, cancel_event, video_path, self._options_frame.get_model(), language),
             daemon=True,
         ).start()
 
-    def _transcribe_worker(self, job_id: int, video_path: str, model_name: str, language: str | None):
-        service = TranscriptionService(self._cancel_event)
+    def _transcribe_worker(
+        self,
+        job_id: int,
+        cancel_event: threading.Event,
+        video_path: str,
+        model_name: str,
+        language: str | None,
+    ):
+        service = TranscriptionService(cancel_event)
         try:
-            result = service.transcribe(video_path, model_name, language, lambda p, s: self._push_status(job_id, p, s))
-            if self._cancel_event.is_set():
+            result = service.transcribe(
+                video_path,
+                model_name,
+                language,
+                lambda p, s: self._push_status(job_id, p, s),
+            )
+            if cancel_event.is_set():
                 self._task_queue.put((job_id, "cancelled", None))
                 return
             self._task_queue.put((job_id, "done", result))
@@ -223,6 +246,10 @@ class VideoTranscriberApp(ctk.CTk):
             self._task_queue.put((job_id, "error", str(exc)))
         except OSError as exc:
             self._task_queue.put((job_id, "error", f"I/O қатесі: {exc}"))
+        except Exception as exc:
+            logger.exception("Unexpected transcription worker error")
+            details = str(exc).strip() or exc.__class__.__name__
+            self._task_queue.put((job_id, "error", f"Күтілмеген қате: {details}"))
 
     def _push_status(self, job_id: int, progress: float, text: str):
         self._task_queue.put((job_id, "status", (progress, text)))
@@ -247,6 +274,7 @@ class VideoTranscriberApp(ctk.CTk):
             self.after(100, self._poll_queue)
 
     def _on_done(self, data: dict[str, Any]):
+        self._cancel_event = None
         self._transcript_text = data["text"]
         self._srt_text = data["srt"]
         self._ts_text = data["ts_text"]
@@ -263,11 +291,13 @@ class VideoTranscriberApp(ctk.CTk):
             self._button_bar.set_output_buttons_state(True)
 
     def _on_cancelled(self):
+        self._cancel_event = None
         self._progress.set_progress(0, "⏹  Тоқтатылды")
         self._options_frame.set_transcribe_state(True)
         self._options_frame.set_cancel_state(False)
 
     def _on_error(self, message: str):
+        self._cancel_event = None
         self._progress.set_progress(0, "❌  Қате шықты")
         self._options_frame.set_transcribe_state(True)
         self._options_frame.set_cancel_state(False)

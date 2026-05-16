@@ -11,10 +11,19 @@ def is_youtube_url(url: str) -> bool:
     from urllib.parse import urlparse
 
     try:
-        netloc = urlparse(url).netloc.lower()
+        hostname = urlparse(url).hostname
     except ValueError:
         return False
-    return any(host in netloc for host in ("youtube.com", "youtu.be", "m.youtube.com", "www.youtube.com"))
+
+    if not hostname:
+        return False
+
+    normalized = hostname.casefold().rstrip(".")
+    return any(_hostname_matches(normalized, domain) for domain in ("youtube.com", "youtu.be"))
+
+
+def _hostname_matches(hostname: str, domain: str) -> bool:
+    return hostname == domain or hostname.endswith(f".{domain}")
 
 
 def format_srt_time(seconds: float) -> str:

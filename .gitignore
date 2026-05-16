@@ -7,11 +7,10 @@ __pycache__/
 .mypy_cache/
 .coverage
 
-# PyInstaller
+# Build artifacts
 build/
 dist/
 *.spec
-!VideoTranscriber.spec
 dist/*.zip
 dist/*.exe
 
@@ -24,10 +23,6 @@ dist/*.exe
 # Local config / secrets / logs
 .env
 *.log
-
-# Optional tools (downloaded binaries)
-tools/*.exe
-
 
 # OS
 .DS_Store

@@ -19,7 +19,10 @@ class TestTranscriberCore(unittest.TestCase):
     def test_is_youtube_url(self):
         self.assertTrue(is_youtube_url("https://www.youtube.com/watch?v=abc"))
         self.assertTrue(is_youtube_url("https://youtu.be/abc"))
+        self.assertTrue(is_youtube_url("https://music.youtube.com/watch?v=abc"))
         self.assertFalse(is_youtube_url("https://example.com/watch?v=abc"))
+        self.assertFalse(is_youtube_url("https://notyoutube.com/watch?v=abc"))
+        self.assertFalse(is_youtube_url("https://youtube.com.evil.com/watch?v=abc"))
         self.assertFalse(is_youtube_url("not-a-url"))
 
     def test_seconds_to_srt_time(self):

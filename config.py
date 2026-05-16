@@ -22,11 +22,6 @@ def default_settings() -> dict[str, Any]:
 def get_config_path() -> Path:
     system = platform.system()
     home = Path.home()
-    if system == "Windows":
-        appdata = os.getenv("LOCALAPPDATA")
-        if appdata:
-            return Path(appdata) / "video-transcriber" / "settings.json"
-        return home / "AppData" / "Local" / "video-transcriber" / "settings.json"
     if system == "Darwin":
         return home / "Library" / "Application Support" / "video-transcriber" / "settings.json"
     xdg_config = os.getenv("XDG_CONFIG_HOME")

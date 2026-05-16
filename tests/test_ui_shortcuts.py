@@ -135,7 +135,7 @@ class TestUiShortcuts(unittest.TestCase):
         self.assertIs(get_edit_target(Wrapper("_textbox", text)), text)
         self.assertIsNone(get_edit_target(object()))
 
-    def test_virtual_shortcut_sequences_cover_windows_clipboard_keys(self):
+    def test_virtual_shortcut_sequences_cover_clipboard_alternate_keys(self):
         sequences = list(iter_virtual_shortcut_sequences())
 
         self.assertIn(("copy", "<Control-Insert>"), sequences)
