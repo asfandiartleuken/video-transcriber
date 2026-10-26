@@ -62,16 +62,7 @@ def main():
     # PyPI normalizes 2026.03.17 to 2026.3.17; GitHub tags retain zeroes.
     year, month, day = map(int, version.split("."))
     version = f"{year:04d}.{month:02d}.{day:02d}"
-    base = f"https://github.com/yt-dlp/yt-dlp/releases/download/{version}"
-    asset = "yt-dlp.exe" if sys.platform == "win32" else "yt-dlp_macos"
-    dest = TOOLS / ("yt-dlp.exe" if sys.platform == "win32" else "yt-dlp")
-    fetch(f"{base}/{asset}", dest)
-    checksums = ROOT / "build" / "yt-dlp-SHA2-256SUMS"
-    fetch(f"{base}/SHA2-256SUMS", checksums)
-    expected = next(line.split()[0] for line in checksums.read_text().splitlines() if line.split()[-1].lstrip("*") == asset)
-    if hashlib.sha256(dest.read_bytes()).hexdigest() != expected:
-        raise RuntimeError("yt-dlp checksum mismatch")
-    dest.chmod(0o755)
+    base = f"https://github.com/yt-dlp/yt-dlp/tree/{version}"
     fetch(f"https://raw.githubusercontent.com/yt-dlp/yt-dlp/{version}/LICENSE", NOTICES / "yt-dlp-LICENSE")
     fetch(f"https://raw.githubusercontent.com/yt-dlp/yt-dlp/{version}/THIRD_PARTY_LICENSES.txt", NOTICES / "yt-dlp-THIRD_PARTY_LICENSES.txt")
     report = subprocess.check_output([sys.executable, "-X", "utf8", "-m", "piplicenses", "--with-license-file", "--format=plain-vertical"], text=True, encoding="utf-8")

@@ -20,17 +20,18 @@ def run_smoke_test():
     import customtkinter
     import certifi
     import tkinter as tk
-    from utils.media import ensure_dependencies, get_tool_binary
+    from utils.media import ensure_dependencies, get_tool_binary, get_yt_dlp_command
 
     ensure_dependencies()
     assert Path(certifi.where()).is_file(), "Missing CA certificates"
     assert tk.Tcl().eval("info patchlevel"), "Missing Tcl runtime"
-    for tool in ("ffmpeg", "ffprobe", "yt-dlp"):
+    for tool in ("ffmpeg", "ffprobe"):
         binary = get_tool_binary(tool)
         if not binary:
             raise RuntimeError(f"Missing bundled {tool}")
         subprocess.run([binary, "--version" if tool == "yt-dlp" else "-version"],
                        check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+    subprocess.run([*get_yt_dlp_command(), "--version"], check=True, timeout=60)
     ctx = mp.get_context("spawn")
     results = ctx.Queue()
     worker = ctx.Process(target=_worker, args=(results,))

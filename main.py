@@ -12,7 +12,11 @@ if __name__ == "__main__":
     configure_logging()
     add_bundled_tools_to_path()
 
-    if "--smoke-test" in sys.argv:
+    if len(sys.argv) > 1 and sys.argv[1] == "--yt-dlp":
+        import yt_dlp
+
+        yt_dlp.main(sys.argv[2:])
+    elif "--smoke-test" in sys.argv:
         from utils.smoke import run_smoke_test
 
         run_smoke_test()

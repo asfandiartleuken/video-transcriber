@@ -35,6 +35,19 @@ def get_tool_binary(tool_name: str) -> str | None:
     return None
 
 
+def get_yt_dlp_command() -> list[str] | None:
+    # Use the embedded module in frozen builds. Reprocessing an already-frozen
+    # universal yt-dlp binary can invalidate its appended archive on Intel Macs.
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--yt-dlp"]
+    import importlib.util
+
+    if importlib.util.find_spec("yt_dlp") is not None:
+        return [sys.executable, "-m", "yt_dlp"]
+    binary = get_tool_binary("yt-dlp")
+    return [binary] if binary else None
+
+
 def add_bundled_tools_to_path() -> None:
     tools_dir = get_app_root() / "tools"
     if not tools_dir.is_dir():

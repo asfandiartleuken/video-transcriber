@@ -19,7 +19,7 @@ def main():
     os.chdir(ROOT)
     tools = ROOT / "build" / "tools"
     suffix = ".exe" if sys.platform == "win32" else ""
-    for name in ("ffmpeg", "ffprobe", "yt-dlp"):
+    for name in ("ffmpeg", "ffprobe"):
         binary = tools / (name + suffix)
         if not binary.is_file():
             parser.error(f"Missing {binary}; see RELEASE.md")
@@ -33,11 +33,11 @@ def main():
                "--add-data", f"assets{os.pathsep}assets",
                "--add-data", f"build/notices{os.pathsep}notices",
                "--collect-all", "customtkinter", "--collect-all", "whisper",
-               "--collect-all", "tiktoken", "--collect-submodules", "tiktoken_ext",
+               "--collect-all", "tiktoken", "--collect-all", "yt_dlp", "--collect-submodules", "tiktoken_ext",
                "--copy-metadata", "openai-whisper", "--copy-metadata", "tiktoken"]
     if sys.platform == "darwin":
         command += ["--osx-bundle-identifier", "com.asfandiartleuken.videotranscriber"]
-    for name in ("ffmpeg", "ffprobe", "yt-dlp"):
+    for name in ("ffmpeg", "ffprobe"):
         command += ["--add-binary", f"{tools / (name + suffix)}{os.pathsep}tools"]
     command += ["main.py"]
     subprocess.run(command, check=True)

@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from config import get_config_path
-from utils.media import get_app_root, get_tool_binary
+from utils.media import get_app_root, get_tool_binary, get_yt_dlp_command
 
 
 class TestPackagingRuntime(unittest.TestCase):
@@ -32,3 +32,11 @@ class TestPackagingRuntime(unittest.TestCase):
     def test_windows_settings_use_appdata(self):
         with patch("config.platform.system", return_value="Windows"), patch.dict(os.environ, {"APPDATA": "/profiles/user/AppData/Roaming", "XDG_CONFIG_HOME": "/wrong"}):
             self.assertEqual(get_config_path(), Path("/profiles/user/AppData/Roaming/video-transcriber/settings.json"))
+
+    def test_frozen_downloader_uses_embedded_python(self):
+        with patch.object(sys, "frozen", True, create=True):
+            self.assertEqual(get_yt_dlp_command(), [sys.executable, "--yt-dlp"])
+
+    def test_source_downloader_uses_installed_module(self):
+        with patch.object(sys, "frozen", False, create=True), patch("importlib.util.find_spec", return_value=object()):
+            self.assertEqual(get_yt_dlp_command(), [sys.executable, "-m", "yt_dlp"])
