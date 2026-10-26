@@ -8,3 +8,6 @@ numpy==1.26.4; sys_platform == "darwin" and platform_machine == "x86_64"
 numba==0.61.2; sys_platform == "darwin" and platform_machine == "x86_64"
 llvmlite==0.44.0; sys_platform == "darwin" and platform_machine == "x86_64"
 torch==2.2.2; sys_platform == "darwin" and platform_machine == "x86_64"
+
+# Keep pkg_resources available for the PyInstaller runtime hooks.
+setuptools==78.1.0
