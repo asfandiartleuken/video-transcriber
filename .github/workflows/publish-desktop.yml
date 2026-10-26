@@ -1,0 +1,86 @@
+name: Publish desktop release
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Desktop installers run ID
+        required: true
+        default: '40376800674'
+  push:
+    branches: [codex/publish-desktop-release]
+    paths: [.github/workflows/publish-desktop.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SOURCE_RUN_ID: ${{ inputs.run_id || '40376800674' }}
+      RELEASE_TAG: v0.1.0-beta.1
+    steps:
+      - name: Verify successful native builds
+        run: |
+          gh api "repos/$GH_REPO/actions/runs/$SOURCE_RUN_ID" > run.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          run = json.loads(Path('run.json').read_text())
+          assert run['name'] == 'Desktop installers'
+          assert run['head_repository']['full_name'] == os.environ['GH_REPO']
+          assert run['status'] == 'completed' and run['conclusion'] == 'success'
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('SOURCE_SHA=' + run['head_sha'] + '\n')
+          PY
+      - name: Download verified installers
+        run: gh run download "$SOURCE_RUN_ID" --repo "$GH_REPO" --dir artifacts
+      - name: Prepare release downloads
+        run: |
+          python3 - <<'PY'
+          import hashlib, shutil
+          from pathlib import Path
+          dest = Path('release')
+          dest.mkdir()
+          expected = {
+              'Windows-x64': 'Video-Transcriber-Windows-x64-Setup.exe',
+              'macOS-arm64': 'Video-Transcriber-macOS-arm64.dmg',
+              'macOS-x64': 'Video-Transcriber-macOS-x64.dmg',
+          }
+          for target, filename in expected.items():
+              source = Path('artifacts') / ('Video-Transcriber-' + target)
+              entries = dict(line.split(maxsplit=1)[::-1] for line in (source / 'SHA256SUMS.txt').read_text().splitlines())
+              installer = source / filename
+              with installer.open('rb') as stream:
+                  digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+              assert digest == entries[filename], filename + ': checksum mismatch'
+              shutil.copy2(installer, dest / filename)
+              shutil.copy2(source / 'build-dependencies.txt', dest / ('build-dependencies-' + target + '.txt'))
+          with (dest / 'SHA256SUMS.txt').open('w') as manifest:
+              for path in sorted(dest.iterdir()):
+                  if path.name == 'SHA256SUMS.txt':
+                      continue
+                  with path.open('rb') as stream:
+                      digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+                  manifest.write(digest + '  ' + path.name + '\n')
+          PY
+          cat > notes.md <<'NOTES'
+          Первая тестовая версия Video Transcriber для Windows x64 и macOS (Apple Silicon / Intel).
+
+          **Скачивание и установка:**
+          - Windows: скачайте `Video-Transcriber-Windows-x64-Setup.exe` и запустите установщик.
+          - Mac с Apple Silicon: скачайте `Video-Transcriber-macOS-arm64.dmg`.
+          - Mac с Intel: скачайте `Video-Transcriber-macOS-x64.dmg`.
+          - На Mac откройте DMG и перенесите Video Transcriber в Applications.
+
+          Python и медиаинструменты входят в приложение. Whisper работает локально, API-ключ не нужен. При первом использовании выбранная модель скачивается из интернета.
+
+          **Ограничения тестовой версии:** нет доверенной подписи Windows и Apple Developer ID/notarization; SmartScreen или Gatekeeper могут предупредить или заблокировать запуск. macOS-сборки проверены на macOS 15. Интернет-сервисы могут менять требования к скачиванию видео, поэтому работа всех YouTube-ссылок не гарантируется.
+
+          Проверены 26 автоматических тестов, запуск упакованного приложения, импорт Whisper и его данных в дочернем процессе, FFmpeg/FFprobe/yt-dlp. Дополнительно на Windows выполнена установка и проверка установленного приложения. Полное распознавание и интерфейс на пользовательских компьютерах требуют отдельной проверки.
+          NOTES
+      - name: Publish beta installers
+        run: |
+          gh release create "$RELEASE_TAG" release/* --repo "$GH_REPO" --target "$SOURCE_SHA" --title 'Video Transcriber 0.1.0 beta 1' --draft --prerelease --notes-file notes.md
