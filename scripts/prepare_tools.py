@@ -74,7 +74,7 @@ def main():
     dest.chmod(0o755)
     fetch(f"https://raw.githubusercontent.com/yt-dlp/yt-dlp/{version}/LICENSE", NOTICES / "yt-dlp-LICENSE")
     fetch(f"https://raw.githubusercontent.com/yt-dlp/yt-dlp/{version}/THIRD_PARTY_LICENSES.txt", NOTICES / "yt-dlp-THIRD_PARTY_LICENSES.txt")
-    report = subprocess.check_output([sys.executable, "-m", "piplicenses", "--with-license-file", "--format=plain-vertical"], text=True, encoding="utf-8")
+    report = subprocess.check_output([sys.executable, "-X", "utf8", "-m", "piplicenses", "--with-license-file", "--format=plain-vertical"], text=True, encoding="utf-8")
     (NOTICES / "python-dependencies.txt").write_text(report, encoding="utf-8")
     versions = {tool: subprocess.check_output([str(TOOLS / (tool + (".exe" if sys.platform == "win32" else ""))), "-version"], text=True).splitlines()[0] for tool in ("ffmpeg", "ffprobe")}
     (NOTICES / "sources.txt").write_text(f"FFmpeg binary source: {ffmpeg_source}\nFFmpeg upstream source: https://ffmpeg.org/download.html\nyt-dlp binary source: {base}\n{versions}\n", encoding="utf-8")
