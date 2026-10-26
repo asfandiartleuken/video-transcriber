@@ -4,7 +4,7 @@ CustomTkinter desktop app that downloads media (URL/YouTube or local file), extr
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux-lightgrey)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
 ## Requirements
 - Python 3.10+
@@ -36,6 +36,15 @@ Logs: written to the platform config dir (e.g., `~/.config/video-transcriber/log
 ## License
 MIT License © 2026 [asfandiartleuken](https://github.com/asfandiartleuken)
 
-## Windows / macOS installers
+## Download for Windows and macOS
 
-See [RELEASE.md](RELEASE.md) for GitHub Actions builds, installation packages, and release steps.
+[Download Video Transcriber 0.1.0 beta 1](https://github.com/asfandiartleuken/video-transcriber/releases/tag/v0.1.0-beta.1)
+
+- Windows x64: `Video-Transcriber-Windows-x64-Setup.exe`
+- Mac with Apple Silicon: `Video-Transcriber-macOS-arm64.dmg`
+- Mac with Intel: `Video-Transcriber-macOS-x64.dmg`
+
+Python and media tools are included. Whisper runs locally without an API key;
+the selected model downloads on first use. These beta packages do not yet have
+trusted publisher signatures or Apple notarization. Windows/macOS may warn or
+block opening a downloaded package. See [RELEASE.md](RELEASE.md) for details.
