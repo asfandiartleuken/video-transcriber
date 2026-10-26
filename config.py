@@ -24,6 +24,8 @@ def get_config_path() -> Path:
     home = Path.home()
     if system == "Darwin":
         return home / "Library" / "Application Support" / "video-transcriber" / "settings.json"
+    if system == "Windows":
+        return Path(os.getenv("APPDATA") or home / "AppData" / "Roaming") / "video-transcriber" / "settings.json"
     xdg_config = os.getenv("XDG_CONFIG_HOME")
     if xdg_config:
         return Path(xdg_config) / "video-transcriber" / "settings.json"

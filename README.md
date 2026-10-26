@@ -35,3 +35,7 @@ Logs: written to the platform config dir (e.g., `~/.config/video-transcriber/log
 
 ## License
 MIT License © 2026 [asfandiartleuken](https://github.com/asfandiartleuken)
+
+## Windows / macOS installers
+
+See [RELEASE.md](RELEASE.md) for GitHub Actions builds, installation packages, and release steps.

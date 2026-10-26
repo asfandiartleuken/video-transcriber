@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 def get_app_root() -> Path:
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent
+        return Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
     return Path(__file__).resolve().parent.parent
 
 
 def get_tool_binary(tool_name: str) -> str | None:
     app_root = get_app_root()
-    candidates = [tool_name]
+    candidates = [tool_name + ".exe", tool_name] if sys.platform == "win32" else [tool_name]
 
     for candidate in candidates:
         bundled = app_root / "tools" / candidate

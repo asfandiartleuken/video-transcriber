@@ -30,3 +30,7 @@ Thumbs.db
 
 # Config (жеке параметрлер)
 *.json
+
+# Native release outputs
+release/
+tools/
