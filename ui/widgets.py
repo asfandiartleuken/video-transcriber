@@ -1,6 +1,5 @@
 import customtkinter as ctk
 
-
 DISPLAY_FONT = "Avenir Next"
 BODY_FONT = "Trebuchet MS"
 
@@ -46,8 +45,8 @@ def _pill(parent, text: str, *, fg_color: str, text_color: str) -> ctk.CTkLabel:
         fg_color=fg_color,
         text_color=text_color,
         corner_radius=999,
-        padx=12,
-        pady=6,
+        padx=10,
+        pady=4,
         font=_font(11, weight="bold"),
     )
 
@@ -56,7 +55,7 @@ def _card(parent, *, fg_color: str = CARD_BG) -> ctk.CTkFrame:
     return ctk.CTkFrame(
         parent,
         fg_color=fg_color,
-        corner_radius=24,
+        corner_radius=18,
         border_width=1,
         border_color=BORDER,
     )
@@ -64,70 +63,42 @@ def _card(parent, *, fg_color: str = CARD_BG) -> ctk.CTkFrame:
 
 class HeaderFrame(ctk.CTkFrame):
     def __init__(self, parent):
-        super().__init__(parent, fg_color=HERO_BG, corner_radius=30)
+        super().__init__(parent, fg_color=HERO_BG, corner_radius=18)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=0)
 
         content = ctk.CTkFrame(self, fg_color="transparent")
-        content.grid(row=0, column=0, padx=(26, 18), pady=26, sticky="nsew")
+        content.grid(row=0, column=0, padx=20, pady=12, sticky="nsew")
         content.grid_columnconfigure(0, weight=1)
 
-        _section_label(content, "WHISPER WORKSPACE", text_color=HERO_TEXT_MUTED).grid(
-            row=0, column=0, sticky="w"
-        )
+        title_row = ctk.CTkFrame(content, fg_color="transparent")
+        title_row.grid(row=0, column=0, sticky="w")
+
         ctk.CTkLabel(
-            content,
-            text="Видео Транскриптор",
-            font=_font(34, weight="bold", family=DISPLAY_FONT),
+            title_row,
+            text="🎙  Видео Транскриптор",
+            font=_font(22, weight="bold", family=DISPLAY_FONT),
             text_color="#F8FBFD",
             anchor="w",
-        ).grid(row=1, column=0, pady=(6, 10), sticky="w")
+        ).grid(row=0, column=0, sticky="w")
+
         ctk.CTkLabel(
             content,
-            text=(
-                "Локал файлды немесе URL-ді жүктеп, мәтін мен SRT нәтижесін бір "
-                "жұмыс кеңістігінде алыңыз."
-            ),
-            font=_font(14),
+            text="Whisper AI көмегімен аудио мен видеоны мәтінге және субтитрге айналдыру",
+            font=_font(12),
             text_color=HERO_TEXT_MUTED,
             anchor="w",
-            justify="left",
-            wraplength=640,
-        ).grid(row=2, column=0, sticky="w")
+        ).grid(row=1, column=0, pady=(2, 0), sticky="w")
 
-        chips = ctk.CTkFrame(content, fg_color="transparent")
-        chips.grid(row=3, column=0, pady=(18, 0), sticky="w")
-        for index, label in enumerate(("Whisper", "Subtitle-ready", "Local + URL")):
+        chips = ctk.CTkFrame(self, fg_color="transparent")
+        chips.grid(row=0, column=1, padx=(0, 20), pady=12, sticky="e")
+        for index, label in enumerate(("Whisper", "Local + URL", "Subtitle (.srt)")):
             _pill(
                 chips,
                 label,
                 fg_color=HERO_PANEL,
                 text_color="#ECF4F8",
-            ).grid(row=0, column=index, padx=(0, 8), sticky="w")
-
-        aside = ctk.CTkFrame(self, fg_color=HERO_PANEL, corner_radius=24)
-        aside.grid(row=0, column=1, padx=(0, 24), pady=24, sticky="ns")
-
-        _section_label(aside, "FLOW", text_color=HERO_TEXT_MUTED).grid(
-            row=0, column=0, padx=18, pady=(18, 6), sticky="w"
-        )
-        ctk.CTkLabel(
-            aside,
-            text="1. Source\n2. Settings\n3. Export",
-            font=_font(15, weight="bold"),
-            text_color="#F8FBFD",
-            justify="left",
-            anchor="w",
-        ).grid(row=1, column=0, padx=18, pady=(0, 4), sticky="w")
-        ctk.CTkLabel(
-            aside,
-            text="Таза мәтін, timestamp view және .srt бірден қолжетімді болады.",
-            font=_font(12),
-            text_color=HERO_TEXT_MUTED,
-            justify="left",
-            wraplength=220,
-            anchor="w",
-        ).grid(row=2, column=0, padx=18, pady=(0, 18), sticky="w")
+            ).grid(row=0, column=index, padx=(0, 6), sticky="e")
 
 
 class FileSelectorFrame(ctk.CTkFrame):
@@ -141,7 +112,7 @@ class FileSelectorFrame(ctk.CTkFrame):
         super().__init__(
             parent,
             fg_color=CARD_BG,
-            corner_radius=24,
+            corner_radius=18,
             border_width=1,
             border_color=BORDER,
         )
@@ -150,92 +121,87 @@ class FileSelectorFrame(ctk.CTkFrame):
         self._on_url_use = on_url_use
         self._settings = settings
 
-        _section_label(self, "SOURCE").grid(row=0, column=0, padx=20, pady=(18, 4), sticky="w")
+        header_box = ctk.CTkFrame(self, fg_color="transparent")
+        header_box.grid(row=0, column=0, padx=16, pady=(12, 6), sticky="ew")
+        _section_label(header_box, "SOURCE").grid(row=0, column=0, sticky="w")
         ctk.CTkLabel(
-            self,
-            text="Медиа көзін таңдаңыз",
-            font=_font(21, weight="bold", family=DISPLAY_FONT),
+            header_box,
+            text="Медиа көзі",
+            font=_font(16, weight="bold", family=DISPLAY_FONT),
             text_color=TEXT,
             anchor="w",
-        ).grid(row=1, column=0, padx=20, sticky="w")
-        ctk.CTkLabel(
-            self,
-            text="Локал файлды ашыңыз немесе тікелей видео/YouTube URL қолданыңыз.",
-            font=_font(12),
-            text_color=TEXT_MUTED,
-            anchor="w",
-        ).grid(row=2, column=0, padx=20, pady=(4, 16), sticky="w")
+        ).grid(row=1, column=0, sticky="w")
 
         self._setup_file_row()
         self._setup_url_row()
 
     def _setup_file_row(self):
         row = _card(self, fg_color=CARD_ALT)
-        row.grid(row=3, column=0, padx=18, pady=(0, 12), sticky="ew")
+        row.grid(row=1, column=0, padx=14, pady=(0, 8), sticky="ew")
         row.grid_columnconfigure(0, weight=1)
         row.grid_columnconfigure(1, weight=0)
 
         _section_label(row, "LOCAL FILE", text_color=TEXT_MUTED).grid(
-            row=0, column=0, padx=16, pady=(14, 4), sticky="w"
+            row=0, column=0, padx=12, pady=(10, 2), sticky="w"
         )
         self._file_label = ctk.CTkLabel(
             row,
             text="Файл таңдалмаған",
-            font=_font(14, weight="bold"),
+            font=_font(13, weight="bold"),
             text_color=TEXT,
             anchor="w",
             justify="left",
-            wraplength=520,
+            wraplength=230,
         )
-        self._file_label.grid(row=1, column=0, padx=16, pady=(0, 14), sticky="ew")
+        self._file_label.grid(row=1, column=0, padx=12, pady=(0, 10), sticky="ew")
 
         ctk.CTkButton(
             row,
             text="Файл таңдау",
-            height=44,
-            width=150,
-            corner_radius=16,
-            font=_font(13, weight="bold"),
+            height=36,
+            width=120,
+            corner_radius=12,
+            font=_font(12, weight="bold"),
             fg_color=ACCENT,
             hover_color=ACCENT_HOVER,
             text_color="#F6FBFA",
             command=self._on_file_select,
-        ).grid(row=0, column=1, rowspan=2, padx=(10, 16), pady=16)
+        ).grid(row=0, column=1, rowspan=2, padx=(6, 12), pady=10)
 
     def _setup_url_row(self):
         row = _card(self, fg_color=CARD_ALT)
-        row.grid(row=4, column=0, padx=18, pady=(0, 18), sticky="ew")
+        row.grid(row=2, column=0, padx=14, pady=(0, 14), sticky="ew")
         row.grid_columnconfigure(0, weight=1)
         row.grid_columnconfigure(1, weight=0)
 
-        _section_label(row, "DIRECT URL", text_color=TEXT_MUTED).grid(
-            row=0, column=0, columnspan=2, padx=16, pady=(14, 4), sticky="w"
+        _section_label(row, "DIRECT URL / YOUTUBE", text_color=TEXT_MUTED).grid(
+            row=0, column=0, columnspan=2, padx=12, pady=(10, 2), sticky="w"
         )
         self._url_entry = ctk.CTkEntry(
             row,
-            height=44,
-            corner_radius=16,
+            height=36,
+            corner_radius=12,
             border_width=1,
             border_color=BORDER,
             fg_color="#FFFDF8",
             text_color=TEXT,
             placeholder_text="https://example.com/video.mp4",
             placeholder_text_color=TEXT_MUTED,
-            font=_font(13),
+            font=_font(12),
         )
-        self._url_entry.grid(row=1, column=0, padx=(16, 10), pady=(0, 16), sticky="ew")
+        self._url_entry.grid(row=1, column=0, padx=(12, 6), pady=(0, 10), sticky="ew")
         ctk.CTkButton(
             row,
             text="URL қолдану",
-            height=44,
-            width=150,
-            corner_radius=16,
-            font=_font(13, weight="bold"),
+            height=36,
+            width=110,
+            corner_radius=12,
+            font=_font(12, weight="bold"),
             fg_color="#D9EDE8",
             hover_color="#C9E3DC",
             text_color=TEXT,
             command=self._on_url_use,
-        ).grid(row=1, column=1, padx=(0, 16), pady=(0, 16))
+        ).grid(row=1, column=1, padx=(0, 12), pady=(0, 10))
 
     def update_file_label(self, text: str, text_color: str = TEXT) -> None:
         resolved_color = TEXT if text_color == "white" else text_color
@@ -256,7 +222,7 @@ class OptionsFrame(ctk.CTkFrame):
         super().__init__(
             parent,
             fg_color=CARD_BG,
-            corner_radius=24,
+            corner_radius=18,
             border_width=1,
             border_color=BORDER,
         )
@@ -273,35 +239,33 @@ class OptionsFrame(ctk.CTkFrame):
 
         self.grid_columnconfigure(0, weight=1)
 
-        _section_label(self, "SETTINGS").grid(row=0, column=0, padx=20, pady=(18, 4), sticky="w")
+        header_box = ctk.CTkFrame(self, fg_color="transparent")
+        header_box.grid(row=0, column=0, padx=16, pady=(12, 6), sticky="ew")
+        _section_label(header_box, "SETTINGS").grid(row=0, column=0, sticky="w")
         ctk.CTkLabel(
-            self,
-            text="Транскрипция параметрлері",
-            font=_font(21, weight="bold", family=DISPLAY_FONT),
+            header_box,
+            text="Параметрлер",
+            font=_font(16, weight="bold", family=DISPLAY_FONT),
             text_color=TEXT,
             anchor="w",
-        ).grid(row=1, column=0, padx=20, sticky="w")
-        ctk.CTkLabel(
-            self,
-            text="Модельді, тілді және timestamp көрінісін бір жерден басқарыңыз.",
-            font=_font(12),
-            text_color=TEXT_MUTED,
-            anchor="w",
-        ).grid(row=2, column=0, padx=20, pady=(4, 16), sticky="w")
+        ).grid(row=1, column=0, sticky="w")
 
         controls = ctk.CTkFrame(self, fg_color="transparent")
-        controls.grid(row=3, column=0, padx=18, pady=(0, 10), sticky="ew")
-        controls.grid_columnconfigure((0, 1, 2), weight=1)
+        controls.grid(row=1, column=0, padx=14, pady=(0, 8), sticky="ew")
+        controls.grid_columnconfigure(0, weight=1)
+        controls.grid_columnconfigure(1, weight=1)
 
+        # Model card
         model_card = _card(controls, fg_color=CARD_ALT)
-        model_card.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
-        _section_label(model_card, "MODEL").grid(row=0, column=0, padx=14, pady=(12, 4), sticky="w")
+        model_card.grid(row=0, column=0, padx=(0, 5), sticky="nsew")
+        model_card.grid_columnconfigure(0, weight=1)
+        _section_label(model_card, "MODEL").grid(row=0, column=0, padx=10, pady=(8, 2), sticky="w")
         ctk.CTkOptionMenu(
             model_card,
             values=WHISPER_MODELS,
             variable=self._model_var,
-            height=42,
-            corner_radius=14,
+            height=36,
+            corner_radius=10,
             fg_color="#DDEEEA",
             button_color=ACCENT,
             button_hover_color=ACCENT_HOVER,
@@ -309,77 +273,72 @@ class OptionsFrame(ctk.CTkFrame):
             dropdown_fg_color="#FFFDF8",
             dropdown_hover_color="#EDF5F3",
             dropdown_text_color=TEXT,
-            font=_font(13, weight="bold"),
-        ).grid(row=1, column=0, padx=14, pady=(0, 14), sticky="ew")
+            font=_font(12, weight="bold"),
+        ).grid(row=1, column=0, padx=10, pady=(0, 10), sticky="ew")
 
+        # Language card
         language_card = _card(controls, fg_color=CARD_ALT)
-        language_card.grid(row=0, column=1, padx=5, sticky="nsew")
+        language_card.grid(row=0, column=1, padx=(5, 0), sticky="nsew")
+        language_card.grid_columnconfigure(0, weight=1)
         _section_label(language_card, "LANGUAGE").grid(
-            row=0, column=0, padx=14, pady=(12, 4), sticky="w"
+            row=0, column=0, padx=10, pady=(8, 2), sticky="w"
         )
         self._lang_entry = ctk.CTkEntry(
             language_card,
-            height=42,
-            corner_radius=14,
+            height=36,
+            corner_radius=10,
             border_width=1,
             border_color=BORDER,
             fg_color="#FFFDF8",
             text_color=TEXT,
             placeholder_text="en / ru / kk / auto",
             placeholder_text_color=TEXT_MUTED,
-            font=_font(13),
+            font=_font(12),
         )
         self._lang_entry.insert(0, self._settings.get("language", DEFAULT_LANGUAGE))
-        self._lang_entry.grid(row=1, column=0, padx=14, pady=(0, 14), sticky="ew")
+        self._lang_entry.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="ew")
 
-        output_card = _card(controls, fg_color=CARD_ALT)
-        output_card.grid(row=0, column=2, padx=(10, 0), sticky="nsew")
-        _section_label(output_card, "OUTPUT").grid(row=0, column=0, padx=14, pady=(12, 4), sticky="w")
+        # Timestamps toggle card
+        output_card = _card(self, fg_color=CARD_ALT)
+        output_card.grid(row=2, column=0, padx=14, pady=(0, 10), sticky="ew")
+        output_card.grid_columnconfigure(0, weight=1)
         ctk.CTkCheckBox(
             output_card,
-            text="Timestamp view қосу",
+            text="Timestamp view қосу (уақыт белгілері)",
             variable=self._ts_var,
-            font=_font(13, weight="bold"),
+            font=_font(12, weight="bold"),
             text_color=TEXT,
             border_color=ACCENT,
             fg_color=ACCENT,
             hover_color=ACCENT_HOVER,
             checkmark_color="#F7FBFA",
-        ).grid(row=1, column=0, padx=14, pady=(2, 10), sticky="w")
-        ctk.CTkLabel(
-            output_card,
-            text="Нәтижені мәтін немесе уақыт белгілерімен ауыстырып көруге болады.",
-            font=_font(11),
-            text_color=TEXT_MUTED,
-            justify="left",
-            wraplength=220,
-            anchor="w",
-        ).grid(row=2, column=0, padx=14, pady=(0, 14), sticky="w")
+        ).grid(row=0, column=0, padx=12, pady=10, sticky="w")
 
+        # Action Buttons
         action_bar = ctk.CTkFrame(self, fg_color="transparent")
-        action_bar.grid(row=4, column=0, padx=18, pady=(0, 18), sticky="ew")
+        action_bar.grid(row=3, column=0, padx=14, pady=(0, 14), sticky="ew")
         action_bar.grid_columnconfigure(0, weight=1)
 
         self._transcribe_btn = ctk.CTkButton(
             action_bar,
-            text="Транскрипциялау",
+            text="▶  Транскрипциялау",
             font=_font(14, weight="bold"),
-            height=48,
-            corner_radius=18,
+            height=44,
+            corner_radius=14,
             fg_color=ACCENT,
             hover_color=ACCENT_HOVER,
             text_color="#F6FBFA",
             command=self._on_transcribe,
         )
-        self._transcribe_btn.grid(row=0, column=0, padx=(0, 10), sticky="ew")
+        self._transcribe_btn.grid(row=0, column=0, padx=(0, 8), sticky="ew")
 
         self._cancel_btn = ctk.CTkButton(
             action_bar,
             text="Тоқтату",
-            height=48,
-            width=140,
-            corner_radius=18,
-            font=_font(13, weight="bold"),
+            height=44,
+            width=110,
+            corner_radius=14,
+            font=_font(12, weight="bold"),
             fg_color="#EEDFD7",
             hover_color="#E3CFC6",
             text_color=DANGER,
@@ -407,28 +366,21 @@ class OptionsFrame(ctk.CTkFrame):
 
 class ProgressFrame(ctk.CTkFrame):
     def __init__(self, parent):
-        super().__init__(parent, fg_color=HERO_BG, corner_radius=24)
+        super().__init__(parent, fg_color=HERO_BG, corner_radius=18)
         self.grid_columnconfigure(0, weight=1)
 
         _section_label(self, "STATUS", text_color=HERO_TEXT_MUTED).grid(
-            row=0, column=0, padx=18, pady=(18, 4), sticky="w"
+            row=0, column=0, padx=16, pady=(12, 2), sticky="w"
         )
-        ctk.CTkLabel(
-            self,
-            text="Жұмыс барысы",
-            font=_font(21, weight="bold", family=DISPLAY_FONT),
-            text_color="#F8FBFD",
-            anchor="w",
-        ).grid(row=1, column=0, padx=18, sticky="w")
 
         status_row = ctk.CTkFrame(self, fg_color="transparent")
-        status_row.grid(row=2, column=0, padx=18, pady=(14, 8), sticky="ew")
+        status_row.grid(row=1, column=0, padx=16, pady=(0, 6), sticky="ew")
         status_row.grid_columnconfigure(0, weight=1)
 
         self._status_label = ctk.CTkLabel(
             status_row,
             text="Дайын",
-            font=_font(18, weight="bold"),
+            font=_font(15, weight="bold"),
             text_color="#F8FBFD",
             anchor="w",
         )
@@ -444,26 +396,23 @@ class ProgressFrame(ctk.CTkFrame):
 
         self._progress = ctk.CTkProgressBar(
             self,
-            height=16,
+            height=12,
             corner_radius=999,
             fg_color="#2A3C47",
             progress_color=ACCENT,
         )
         self._progress.set(0)
-        self._progress.grid(row=3, column=0, padx=18, pady=(0, 16), sticky="ew")
+        self._progress.grid(row=2, column=0, padx=16, pady=(0, 10), sticky="ew")
 
         ctk.CTkLabel(
             self,
-            text=(
-                "Транскрипция кезінде терезе ашық қалсын. Процесс аяқталған соң TXT "
-                "пен SRT экспорт батырмалары белсенді болады."
-            ),
-            font=_font(12),
+            text="Транскрипция кезінде терезе ашық қалсын. Нәтиже оң жақта шығады.",
+            font=_font(11),
             text_color=HERO_TEXT_MUTED,
             justify="left",
-            wraplength=300,
+            wraplength=360,
             anchor="w",
-        ).grid(row=4, column=0, padx=18, pady=(0, 18), sticky="w")
+        ).grid(row=3, column=0, padx=16, pady=(0, 12), sticky="w")
 
     def set_progress(self, value: float, status: str) -> None:
         clamped = max(0.0, min(value, 1.0))
@@ -492,7 +441,7 @@ class ResultFrame(ctk.CTkFrame):
         super().__init__(
             parent,
             fg_color=CARD_BG,
-            corner_radius=24,
+            corner_radius=18,
             border_width=1,
             border_color=BORDER,
         )
@@ -500,7 +449,7 @@ class ResultFrame(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
 
         top_bar = ctk.CTkFrame(self, fg_color="transparent")
-        top_bar.grid(row=0, column=0, padx=18, pady=(18, 0), sticky="ew")
+        top_bar.grid(row=0, column=0, padx=16, pady=(12, 6), sticky="ew")
         top_bar.grid_columnconfigure(0, weight=1)
 
         label_stack = ctk.CTkFrame(top_bar, fg_color="transparent")
@@ -509,7 +458,7 @@ class ResultFrame(ctk.CTkFrame):
         ctk.CTkLabel(
             label_stack,
             text="Транскрипция нәтижесі",
-            font=_font(21, weight="bold", family=DISPLAY_FONT),
+            font=_font(18, weight="bold", family=DISPLAY_FONT),
             text_color=TEXT,
             anchor="w",
         ).grid(row=1, column=0, sticky="w")
@@ -527,17 +476,18 @@ class ResultFrame(ctk.CTkFrame):
             self,
             font=_font(14),
             wrap="word",
-            corner_radius=18,
-            border_width=0,
+            corner_radius=14,
+            border_width=1,
+            border_color=BORDER,
             fg_color=TEXTBOX_BG,
             text_color=TEXT,
             scrollbar_button_color="#D8D1C4",
             scrollbar_button_hover_color="#B8AD9A",
         )
-        self._text_box.grid(row=1, column=0, padx=18, pady=(14, 18), sticky="nsew")
+        self._text_box.grid(row=1, column=0, padx=16, pady=(4, 16), sticky="nsew")
         self._text_box.insert(
             "1.0",
-            "Нәтиже осы жерде пайда болады. Алдымен файлды немесе URL-ді таңдаңыз.",
+            "Нәтиже осы жерде пайда болады. Алдымен сол жақта файлды немесе URL-ді таңдап, «Транскрипциялау» батырмасын басыңыз.",
         )
 
     def get_text_box(self) -> ctk.CTkTextbox:
@@ -567,61 +517,61 @@ class ButtonBarFrame(ctk.CTkFrame):
 
         ctk.CTkLabel(
             self,
-            text="Экспорт және жылдам әрекеттер",
+            text="Экспорт:",
             font=_font(12, weight="bold"),
             text_color=TEXT_MUTED,
             anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
         self._copy_btn = self._make_button(
-            text="Clipboard",
-            width=130,
+            text="📋 Clipboard",
+            width=115,
             fg_color="#E8E4DC",
             hover_color="#D8D2C8",
             text_color=TEXT,
             command=on_copy,
         )
-        self._copy_btn.grid(row=0, column=1, padx=6)
+        self._copy_btn.grid(row=0, column=1, padx=4)
 
         self._save_txt_btn = self._make_button(
-            text="TXT сақтау",
-            width=136,
+            text="💾 TXT сақтау",
+            width=120,
             fg_color=SUCCESS,
             hover_color=SUCCESS_HOVER,
             text_color="#F5FBF8",
             command=on_save_txt,
         )
-        self._save_txt_btn.grid(row=0, column=2, padx=6)
+        self._save_txt_btn.grid(row=0, column=2, padx=4)
 
         self._save_srt_btn = self._make_button(
-            text="SRT сақтау",
-            width=136,
+            text="💾 SRT сақтау",
+            width=120,
             fg_color=AMBER,
             hover_color=AMBER_HOVER,
             text_color="#FFF8ED",
             command=on_save_srt,
         )
-        self._save_srt_btn.grid(row=0, column=3, padx=6)
+        self._save_srt_btn.grid(row=0, column=3, padx=4)
 
         self._toggle_view_btn = self._make_button(
-            text="TS көру",
-            width=128,
+            text="👁 TS көру",
+            width=110,
             fg_color="#D9EDE8",
             hover_color="#C7E3DC",
             text_color=TEXT,
             command=on_toggle_view,
         )
-        self._toggle_view_btn.grid(row=0, column=4, padx=6)
+        self._toggle_view_btn.grid(row=0, column=4, padx=4)
 
         self._reset_btn = self._make_button(
-            text="Тазалау",
-            width=124,
+            text="🗑 Тазалау",
+            width=100,
             fg_color="#EADFD8",
             hover_color="#DDCDC4",
             text_color=DANGER,
             command=on_reset,
         )
-        self._reset_btn.grid(row=0, column=5, padx=(6, 0))
+        self._reset_btn.grid(row=0, column=5, padx=(4, 0))
 
         self.set_output_buttons_state(False)
 
@@ -638,10 +588,10 @@ class ButtonBarFrame(ctk.CTkFrame):
         return ctk.CTkButton(
             self,
             text=text,
-            height=44,
+            height=38,
             width=width,
-            corner_radius=16,
-            font=_font(13, weight="bold"),
+            corner_radius=12,
+            font=_font(12, weight="bold"),
             fg_color=fg_color,
             hover_color=hover_color,
             text_color=text_color,
@@ -659,8 +609,8 @@ class ButtonBarFrame(ctk.CTkFrame):
             button.configure(state=state)
 
     def toggle_view_button(self, show_timestamps: bool) -> None:
-        text = "Мәтін көру" if show_timestamps else "TS көру"
+        text = "📄 Мәтін көру" if show_timestamps else "👁 TS көру"
         self._toggle_view_btn.configure(text=text)
 
     def reset_view_button(self) -> None:
-        self._toggle_view_btn.configure(state="disabled", text="TS көру")
+        self._toggle_view_btn.configure(state="disabled", text="👁 TS көру")

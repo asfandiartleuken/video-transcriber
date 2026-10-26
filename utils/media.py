@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 def get_app_root() -> Path:
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent
+        return Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
     return Path(__file__).resolve().parent.parent
 
 
 def get_tool_binary(tool_name: str) -> str | None:
     app_root = get_app_root()
-    candidates = [tool_name]
+    candidates = [tool_name + ".exe", tool_name] if sys.platform == "win32" else [tool_name]
 
     for candidate in candidates:
         bundled = app_root / "tools" / candidate
@@ -33,6 +33,19 @@ def get_tool_binary(tool_name: str) -> str | None:
         if resolved:
             return resolved
     return None
+
+
+def get_yt_dlp_command() -> list[str] | None:
+    # Use the embedded module in frozen builds. Reprocessing an already-frozen
+    # universal yt-dlp binary can invalidate its appended archive on Intel Macs.
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--yt-dlp"]
+    import importlib.util
+
+    if importlib.util.find_spec("yt_dlp") is not None:
+        return [sys.executable, "-m", "yt_dlp"]
+    binary = get_tool_binary("yt-dlp")
+    return [binary] if binary else None
 
 
 def add_bundled_tools_to_path() -> None:

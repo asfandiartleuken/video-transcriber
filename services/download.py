@@ -8,7 +8,7 @@ import urllib.request
 from typing import Any
 
 from errors import CancelledError, DependencyError, DownloadError
-from utils.media import get_tool_binary
+from utils.media import get_yt_dlp_command
 
 DOWNLOAD_TIMEOUT_SECONDS = 30
 DOWNLOAD_RETRIES = 2
@@ -125,8 +125,8 @@ def download_youtube_video(
     cancel_event: threading.Event,
     progress_callback=None,
 ) -> None:
-    yt_dlp_bin = get_tool_binary("yt-dlp")
-    if yt_dlp_bin is None:
+    yt_dlp_command = get_yt_dlp_command()
+    if yt_dlp_command is None:
         raise DependencyError(
             "YouTube сілтемесі үшін `yt-dlp` керек.\n\n"
             "Орнату:\n"
@@ -135,7 +135,7 @@ def download_youtube_video(
         )
 
     cmd = [
-        yt_dlp_bin,
+        *yt_dlp_command,
         "--no-playlist",
         "--newline",
         "--no-warnings",

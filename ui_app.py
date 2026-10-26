@@ -34,8 +34,8 @@ class VideoTranscriberApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("🎙 Видео Транскриптор")
-        self.geometry("1180x820")
-        self.minsize(980, 700)
+        self.geometry("1240x780")
+        self.minsize(960, 620)
         self.configure(fg_color="#F3EEE6")
 
         self._video_path = ""
@@ -49,53 +49,72 @@ class VideoTranscriberApp(ctk.CTk):
         self._job_counter = 0
         self._active_job_id = 0
 
+        self._set_app_icon()
         self._build_ui()
         self._bind_shortcuts()
         self._poll_queue()
 
+    def _set_app_icon(self):
+        icon_path = os.path.join(os.path.dirname(__file__), "assets", "icon.png")
+        if os.path.isfile(icon_path):
+            try:
+                img = tk.PhotoImage(file=icon_path)
+                self.iconphoto(True, img)
+                self._icon_ref = img
+            except Exception as e:
+                logger.debug("Failed to set window icon: %s", e)
+
     def _build_ui(self):
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=0, minsize=420)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
+        # Header across top
         self._header = HeaderFrame(self)
-        self._header.grid(row=0, column=0, padx=22, pady=(22, 14), sticky="ew")
+        self._header.grid(row=0, column=0, columnspan=2, padx=18, pady=(16, 12), sticky="ew")
 
-        top_area = ctk.CTkFrame(self, fg_color="transparent")
-        top_area.grid(row=1, column=0, padx=22, pady=(0, 14), sticky="ew")
-        top_area.grid_columnconfigure(0, weight=3)
-        top_area.grid_columnconfigure(1, weight=2)
+        # Left Column: Controls (Source, Settings, Actions, Status)
+        left_panel = ctk.CTkFrame(self, fg_color="transparent")
+        left_panel.grid(row=1, column=0, padx=(18, 8), pady=(0, 16), sticky="nsew")
+        left_panel.grid_columnconfigure(0, weight=1)
 
         self._file_selector = FileSelectorFrame(
-            top_area,
+            left_panel,
             on_file_select=self._select_file,
             on_url_use=self._use_url,
             settings=self._settings,
         )
-        self._file_selector.grid(row=0, column=0, padx=(0, 10), pady=(0, 12), sticky="ew")
+        self._file_selector.grid(row=0, column=0, pady=(0, 10), sticky="ew")
 
         self._options_frame = OptionsFrame(
-            top_area,
+            left_panel,
             settings=self._settings,
             on_transcribe=self._start_transcription,
             on_cancel=self._cancel_transcription,
         )
-        self._options_frame.grid(row=1, column=0, padx=(0, 10), sticky="ew")
+        self._options_frame.grid(row=1, column=0, pady=(0, 10), sticky="ew")
 
-        self._progress = ProgressFrame(top_area)
-        self._progress.grid(row=0, column=1, rowspan=2, padx=(10, 0), sticky="nsew")
+        self._progress = ProgressFrame(left_panel)
+        self._progress.grid(row=2, column=0, sticky="ew")
 
-        self._result = ResultFrame(self)
-        self._result.grid(row=2, column=0, padx=22, pady=(0, 12), sticky="nsew")
+        # Right Column: Result Workspace (Transcript Text + Export Action Bar)
+        right_panel = ctk.CTkFrame(self, fg_color="transparent")
+        right_panel.grid(row=1, column=1, padx=(8, 18), pady=(0, 16), sticky="nsew")
+        right_panel.grid_columnconfigure(0, weight=1)
+        right_panel.grid_rowconfigure(0, weight=1)
+
+        self._result = ResultFrame(right_panel)
+        self._result.grid(row=0, column=0, sticky="nsew")
 
         self._button_bar = ButtonBarFrame(
-            self,
+            right_panel,
             on_copy=self._copy_to_clipboard,
             on_save_txt=self._save_txt,
             on_save_srt=self._save_srt,
             on_toggle_view=self._toggle_timestamp_view,
             on_reset=self._reset_output,
         )
-        self._button_bar.grid(row=3, column=0, padx=22, pady=(0, 22), sticky="ew")
+        self._button_bar.grid(row=1, column=0, pady=(10, 0), sticky="ew")
 
     def _bind_shortcuts(self):
         editable_widgets = (
